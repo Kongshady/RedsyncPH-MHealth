@@ -92,9 +92,13 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
           .toList();
 
       setState(() {
-        // Add online data to existing offline data
-        _bleedLogs.addAll(onlineBleedLogs);
-        _infusionLogs.addAll(onlineInfusionLogs);
+        // Merge online data with offline data, avoiding duplicates
+        final allBleedLogs = [..._bleedLogs, ...onlineBleedLogs];
+        final allInfusionLogs = [..._infusionLogs, ...onlineInfusionLogs];
+
+        // Remove duplicates by ID (prefer online version if both exist)
+        _bleedLogs = _removeDuplicates(allBleedLogs);
+        _infusionLogs = _removeDuplicates(allInfusionLogs);
 
         // Sort by date (most recent first)
         _bleedLogs.sort((a, b) => _compareLogDates(b, a));
@@ -185,6 +189,53 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
       print('Error comparing dates: $e');
       return 0;
     }
+  }
+
+  // Remove duplicates from logs, preferring online version over offline
+  List<Map<String, dynamic>> _removeDuplicates(
+      List<Map<String, dynamic>> logs) {
+    final Map<String, Map<String, dynamic>> uniqueLogs = {};
+
+    for (final log in logs) {
+      final String id = log['id']?.toString() ?? '';
+
+      if (id.isNotEmpty) {
+        // If this ID already exists, prefer the online version (isOffline == false)
+        if (uniqueLogs.containsKey(id)) {
+          final existing = uniqueLogs[id]!;
+          final isExistingOffline = existing['isOffline'] == true;
+          final isCurrentOffline = log['isOffline'] == true;
+
+          // Keep online version if we have both
+          if (isExistingOffline && !isCurrentOffline) {
+            uniqueLogs[id] = log; // Replace offline with online
+          }
+          // If both are online or both are offline, keep the first one
+        } else {
+          uniqueLogs[id] = log;
+        }
+      } else {
+        // If no ID, try to deduplicate by content (date + time + other fields)
+        final String contentKey = _generateContentKey(log);
+        if (!uniqueLogs.containsKey(contentKey)) {
+          uniqueLogs[contentKey] = log;
+        }
+      }
+    }
+
+    return uniqueLogs.values.toList();
+  }
+
+  // Generate a content-based key for logs without IDs
+  String _generateContentKey(Map<String, dynamic> log) {
+    final date = log['date']?.toString() ?? '';
+    final time = log['time']?.toString() ?? '';
+    final bodyRegion = log['bodyRegion']?.toString() ?? '';
+    final medication = log['medication']?.toString() ?? '';
+    final severity = log['severity']?.toString() ?? '';
+    final dose = log['doseIU']?.toString() ?? '';
+
+    return '$date-$time-$bodyRegion-$medication-$severity-$dose';
   }
 
   @override

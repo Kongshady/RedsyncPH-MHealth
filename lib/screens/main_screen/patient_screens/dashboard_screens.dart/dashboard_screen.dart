@@ -118,11 +118,18 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       print(
           'Loaded ${bleeds.length} bleeds, ${dosageHistory.length} calculations, ${infusionLogs.length} infusions');
 
+      // Remove duplicates from bleeding episodes and infusion logs
+      final uniqueBleeds = _removeDuplicates(bleeds);
+      final uniqueInfusions = _removeDuplicates(infusionLogs);
+
+      print(
+          'After removing duplicates: ${uniqueBleeds.length} bleeds, ${uniqueInfusions.length} infusions');
+
       // Combine all activities and sort by timestamp
       List<Map<String, dynamic>> allActivities = [];
 
       // Add bleeds with activity type
-      for (var bleed in bleeds) {
+      for (var bleed in uniqueBleeds) {
         allActivities.add({
           ...bleed,
           'activityType': 'bleed',
@@ -144,7 +151,7 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       }
 
       // Add infusion logs as infusion activities
-      for (var infusion in infusionLogs.take(5)) {
+      for (var infusion in uniqueInfusions.take(5)) {
         allActivities.add({
           ...infusion,
           'activityType': 'infusion',
@@ -1200,6 +1207,112 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       default:
         return Colors.grey;
     }
+  }
+
+  // Helper method to remove duplicates from logs
+  // Prefers online (synced) records over offline records, and for records without 'id',
+  // uses content-based deduplication
+  List<Map<String, dynamic>> _removeDuplicates(
+      List<Map<String, dynamic>> logs) {
+    if (logs.isEmpty) return logs;
+
+    Map<String, Map<String, dynamic>> uniqueLogs = {};
+
+    for (var log in logs) {
+      String key;
+
+      // If the log has an 'id' field, use it as the key
+      if (log['id'] != null && log['id'].toString().isNotEmpty) {
+        key = log['id'].toString();
+      } else {
+        // For logs without id, generate a content-based key
+        key = _generateContentKey(log);
+      }
+
+      // If we already have a log with this key
+      if (uniqueLogs.containsKey(key)) {
+        var existing = uniqueLogs[key]!;
+
+        // Prefer logs that have been synced to Firebase (online records)
+        // Online records have 'id' field, offline records typically don't
+        bool existingIsOnline =
+            existing['id'] != null && existing['id'].toString().isNotEmpty;
+        bool newIsOnline = log['id'] != null && log['id'].toString().isNotEmpty;
+
+        if (newIsOnline && !existingIsOnline) {
+          // Replace offline record with online record
+          uniqueLogs[key] = log;
+        } else if (!newIsOnline && existingIsOnline) {
+          // Keep existing online record
+          continue;
+        } else {
+          // Both are same type, keep the one with more recent timestamp
+          int existingTimestamp = _extractTimestamp(existing['createdAt']);
+          int newTimestamp = _extractTimestamp(log['createdAt']);
+
+          if (newTimestamp > existingTimestamp) {
+            uniqueLogs[key] = log;
+          }
+        }
+      } else {
+        uniqueLogs[key] = log;
+      }
+    }
+
+    return uniqueLogs.values.toList();
+  }
+
+  // Generate a content-based key for logs without unique IDs
+  String _generateContentKey(Map<String, dynamic> log) {
+    // Create a key based on the content of the log
+    List<String> keyParts = [];
+
+    // Add date if available
+    if (log['date'] != null) {
+      keyParts.add(log['date'].toString());
+    }
+
+    // Add time if available
+    if (log['time'] != null) {
+      keyParts.add(log['time'].toString());
+    }
+
+    // For bleeding episodes, add specific bleeding data
+    if (log['bleedingLocation'] != null) {
+      keyParts.add(log['bleedingLocation'].toString());
+    }
+    if (log['pain'] != null) {
+      keyParts.add(log['pain'].toString());
+    }
+    if (log['mobility'] != null) {
+      keyParts.add(log['mobility'].toString());
+    }
+
+    // For infusion logs, add specific infusion data
+    if (log['factorType'] != null) {
+      keyParts.add(log['factorType'].toString());
+    }
+    if (log['dosage'] != null) {
+      keyParts.add(log['dosage'].toString());
+    }
+    if (log['injectionSite'] != null) {
+      keyParts.add(log['injectionSite'].toString());
+    }
+    if (log['lot'] != null) {
+      keyParts.add(log['lot'].toString());
+    }
+
+    // Add notes if available
+    if (log['notes'] != null && log['notes'].toString().isNotEmpty) {
+      keyParts.add(log['notes'].toString());
+    }
+
+    // If no specific content, use a timestamp-based key
+    if (keyParts.isEmpty) {
+      keyParts.add(_extractTimestamp(log['createdAt']).toString());
+    }
+
+    return keyParts.join('|');
   }
 
   // Helper method to extract timestamp from various Firestore timestamp formats

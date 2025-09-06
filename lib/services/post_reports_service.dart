@@ -46,15 +46,17 @@ class PostReportsService {
   Stream<List<Map<String, dynamic>>> getReportsByStatus(String status) {
     print(
         'PostReportsService: Starting to stream post reports with status: $status');
+
+    // Use a simpler query and sort in memory to avoid index issues
     return _firestore
         .collection('post_reports')
         .where('status', isEqualTo: status)
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
       print(
           'PostReportsService: Received ${snapshot.docs.length} post reports with status "$status" from Firestore');
-      return snapshot.docs.map((doc) {
+
+      final reports = snapshot.docs.map((doc) {
         final data = doc.data();
         return {
           'id': doc.id,
@@ -73,10 +75,39 @@ class PostReportsService {
           'adminNotes': data['adminNotes'] ?? '',
         };
       }).toList();
+
+      // Sort by timestamp in memory (most recent first)
+      reports.sort((a, b) {
+        final aTime = a['timestamp'];
+        final bTime = b['timestamp'];
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+
+        // Handle Firestore Timestamp objects
+        if (aTime.runtimeType.toString() == 'Timestamp' &&
+            bTime.runtimeType.toString() == 'Timestamp') {
+          return (bTime as dynamic).compareTo(aTime as dynamic);
+        }
+
+        return 0;
+      });
+
+      return reports;
     });
   }
 
-  // Get count of pending reports
+  // Get reports by status - Alternative method using filter from all reports
+  Stream<List<Map<String, dynamic>>> getReportsByStatusFallback(String status) {
+    print('PostReportsService: Using fallback method for status: $status');
+    return getPostReportsStream().map((allReports) {
+      return allReports.where((report) {
+        final reportStatus = report['status'] ?? 'pending';
+        return reportStatus == status;
+      }).toList();
+    });
+  }
+
   Stream<int> getPendingReportsCount() {
     return _firestore
         .collection('post_reports')

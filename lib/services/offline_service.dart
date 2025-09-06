@@ -315,11 +315,40 @@ class OfflineService {
   /// Sync bleed logs to Firebase
   Future<void> _syncBleedLogs() async {
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('❌ No user logged in - skipping bleed log sync');
+        return;
+      }
+
       final box = Hive.box<BleedLog>(_bleedLogsBox);
       final unsynced = box.values.where((log) => log.needsSync).toList();
 
+      if (unsynced.isEmpty) {
+        print('✅ No bleed logs to sync');
+        return;
+      }
+
+      print('🔄 Syncing ${unsynced.length} bleed logs...');
+
+      // Get existing Firebase logs to check for duplicates
+      final existingLogs = await _firestoreService.getBleedLogs(user.uid,
+          limit: 100, forceRefresh: true);
+
       for (final log in unsynced) {
         try {
+          // Check if this log already exists in Firebase
+          bool isDuplicate = _isBleedLogDuplicate(log, existingLogs);
+
+          if (isDuplicate) {
+            print('⚠️ Skipping duplicate bleed log: ${log.date} ${log.time}');
+            // Mark as synced even though we didn't upload it (it already exists)
+            log.needsSync = false;
+            log.syncedAt = DateTime.now();
+            await log.save();
+            continue;
+          }
+
           await _firestoreService.saveBleedLog(
             uid: log.uid,
             date: log.date,
@@ -348,11 +377,40 @@ class OfflineService {
   /// Sync infusion logs to Firebase
   Future<void> _syncInfusionLogs() async {
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('❌ No user logged in - skipping infusion log sync');
+        return;
+      }
+
       final box = Hive.box<InfusionLog>(_infusionLogsBox);
       final unsynced = box.values.where((log) => log.needsSync).toList();
 
+      if (unsynced.isEmpty) {
+        print('✅ No infusion logs to sync');
+        return;
+      }
+
+      print('🔄 Syncing ${unsynced.length} infusion logs...');
+
+      // Get existing Firebase logs to check for duplicates
+      final existingLogs = await _firestoreService.getInfusionLogs(user.uid);
+
       for (final log in unsynced) {
         try {
+          // Check if this log already exists in Firebase
+          bool isDuplicate = _isInfusionLogDuplicate(log, existingLogs);
+
+          if (isDuplicate) {
+            print(
+                '⚠️ Skipping duplicate infusion log: ${log.date} ${log.time}');
+            // Mark as synced even though we didn't upload it (it already exists)
+            log.needsSync = false;
+            log.syncedAt = DateTime.now();
+            await log.save();
+            continue;
+          }
+
           await _firestoreService.saveInfusionLog(
             uid: log.uid,
             medication: log.medication,
@@ -464,5 +522,50 @@ class OfflineService {
       print('❌ Error getting storage stats: $e');
       return {};
     }
+  }
+
+  // ============================================================================
+  //                          DUPLICATE CHECKING METHODS
+  // ============================================================================
+
+  /// Check if a bleed log already exists in Firebase
+  bool _isBleedLogDuplicate(
+      BleedLog offlineLog, List<Map<String, dynamic>> existingLogs) {
+    for (final existingLog in existingLogs) {
+      // Check for exact match on key fields
+      if (existingLog['date'] == offlineLog.date &&
+          existingLog['time'] == offlineLog.time &&
+          existingLog['bodyRegion'] == offlineLog.bodyRegion &&
+          existingLog['severity'] == offlineLog.severity &&
+          _compareNullableStrings(
+              existingLog['specificRegion'], offlineLog.specificRegion) &&
+          _compareNullableStrings(existingLog['notes'], offlineLog.notes)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Check if an infusion log already exists in Firebase
+  bool _isInfusionLogDuplicate(
+      InfusionLog offlineLog, List<Map<String, dynamic>> existingLogs) {
+    for (final existingLog in existingLogs) {
+      // Check for exact match on key fields
+      if (existingLog['date'] == offlineLog.date &&
+          existingLog['time'] == offlineLog.time &&
+          existingLog['medication'] == offlineLog.medication &&
+          existingLog['doseIU'] == offlineLog.doseIU &&
+          _compareNullableStrings(existingLog['notes'], offlineLog.notes)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Helper method to compare nullable strings
+  bool _compareNullableStrings(dynamic value1, String? value2) {
+    final str1 = value1?.toString() ?? '';
+    final str2 = value2 ?? '';
+    return str1 == str2;
   }
 }

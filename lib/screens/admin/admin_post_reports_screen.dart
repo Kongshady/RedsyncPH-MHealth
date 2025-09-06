@@ -68,7 +68,8 @@ class _AdminPostReportsScreenState extends State<AdminPostReportsScreen>
 
     switch (filter) {
       case 'pending':
-        stream = _reportsService.getReportsByStatus('pending');
+        // Use fallback method for better reliability
+        stream = _reportsService.getReportsByStatusFallback('pending');
         break;
       case 'reviewed':
         // Combine approved and dismissed reports for reviewed tab
