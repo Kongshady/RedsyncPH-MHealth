@@ -203,6 +203,13 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
         ),
         backgroundColor: Colors.amber,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: _showCalendarView,
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Calendar View',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -1373,6 +1380,547 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
         );
       default:
         return const SizedBox.shrink();
+    }
+  }
+
+  void _showCalendarView() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CalendarViewWidget(
+        bleedLogs: _bleedLogs,
+        infusionLogs: _infusionLogs,
+      ),
+    );
+  }
+}
+
+class _CalendarViewWidget extends StatefulWidget {
+  final List<Map<String, dynamic>> bleedLogs;
+  final List<Map<String, dynamic>> infusionLogs;
+
+  const _CalendarViewWidget({
+    required this.bleedLogs,
+    required this.infusionLogs,
+  });
+
+  @override
+  State<_CalendarViewWidget> createState() => _CalendarViewWidgetState();
+}
+
+class _CalendarViewWidgetState extends State<_CalendarViewWidget> {
+  DateTime _selectedMonth = DateTime.now();
+  DateTime? _selectedDate;
+  List<Map<String, dynamic>> _selectedDateLogs = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_month,
+                    color: Colors.amber,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Calendar View',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        'View bleeding episodes and infusions by date',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+
+          // Month Navigation
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedMonth = DateTime(
+                        _selectedMonth.year,
+                        _selectedMonth.month - 1,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Text(
+                    _getMonthYearString(_selectedMonth),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedMonth = DateTime(
+                        _selectedMonth.year,
+                        _selectedMonth.month + 1,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ),
+
+          // Calendar Grid
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Weekday headers
+                  Row(
+                    children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                        .map((day) => Expanded(
+                              child: Center(
+                                child: Text(
+                                  day,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Calendar grid
+                  Expanded(
+                    child: _buildCalendarGrid(),
+                  ),
+
+                  // Legend
+                  if (_hasAnyLogs())
+                    Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildLegendItem(
+                            color: Colors.redAccent,
+                            label: 'Bleeding',
+                            icon: Icons.bloodtype,
+                          ),
+                          _buildLegendItem(
+                            color: Colors.green,
+                            label: 'Infusion',
+                            icon: Icons.medical_services,
+                          ),
+                          _buildLegendItem(
+                            color: Colors.purple,
+                            label: 'Both',
+                            icon: Icons.circle,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Selected date details
+                  if (_selectedDate != null && _selectedDateLogs.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Logs for ${_formatSelectedDate(_selectedDate!)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ..._selectedDateLogs.map((log) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _getLogIcon(log),
+                                      size: 16,
+                                      color: _getLogColor(log),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _getLogSummary(log),
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    final firstDayOfMonth =
+        DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+    final lastDayOfMonth =
+        DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+    final firstWeekday =
+        firstDayOfMonth.weekday % 7; // Convert to 0-based index
+    final daysInMonth = lastDayOfMonth.day;
+
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: 42, // 6 weeks × 7 days
+      itemBuilder: (context, index) {
+        if (index < firstWeekday || index >= firstWeekday + daysInMonth) {
+          return const SizedBox(); // Empty cell
+        }
+
+        final day = index - firstWeekday + 1;
+        final currentDate =
+            DateTime(_selectedMonth.year, _selectedMonth.month, day);
+        final logsForDate = _getLogsForDate(currentDate);
+        final isSelected = _selectedDate?.day == day &&
+            _selectedDate?.month == _selectedMonth.month &&
+            _selectedDate?.year == _selectedMonth.year;
+        final isToday = _isToday(currentDate);
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedDate = currentDate;
+              _selectedDateLogs = logsForDate;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Colors.amber
+                  : isToday
+                      ? Colors.amber.withValues(alpha: 0.3)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: isToday && !isSelected
+                  ? Border.all(color: Colors.amber, width: 2)
+                  : null,
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Text(
+                    day.toString(),
+                    style: TextStyle(
+                      fontWeight: isSelected || isToday
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.white
+                          : isToday
+                              ? Colors.amber.shade700
+                              : Colors.black87,
+                    ),
+                  ),
+                ),
+                if (logsForDate.isNotEmpty)
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: _buildDateIndicator(logsForDate),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDateIndicator(List<Map<String, dynamic>> logs) {
+    // Check for bleeding episodes using multiple possible field names
+    final hasBleed = logs.any((log) =>
+        log['bodyRegion'] != null ||
+        log['bodyPart'] != null ||
+        log['location'] != null ||
+        log['severity'] != null ||
+        log.containsKey('bodyRegion') ||
+        log.containsKey('bodyPart') ||
+        log.containsKey('location') ||
+        log.containsKey('severity'));
+
+    // Check for infusions using multiple possible field names
+    final hasInfusion = logs.any((log) =>
+        log['medication'] != null ||
+        log['doseIU'] != null ||
+        log['dose'] != null ||
+        log.containsKey('medication') ||
+        log.containsKey('doseIU') ||
+        log.containsKey('dose'));
+
+    Color color;
+    if (hasBleed && hasInfusion) {
+      color = Colors.purple;
+    } else if (hasBleed) {
+      color = Colors.redAccent;
+    } else {
+      color = Colors.green;
+    }
+
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildLegendItem({
+    required Color color,
+    required String label,
+    required IconData icon,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> _getLogsForDate(DateTime date) {
+    final dateString =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final logs = <Map<String, dynamic>>[];
+
+    // Add bleeding episodes for this date
+    for (final log in widget.bleedLogs) {
+      final logDateStr = _normalizeDate(log['date']?.toString() ?? '');
+      if (logDateStr == dateString) {
+        logs.add(log);
+      }
+    }
+
+    // Add infusion logs for this date
+    for (final log in widget.infusionLogs) {
+      final logDateStr = _normalizeDate(log['date']?.toString() ?? '');
+      if (logDateStr == dateString) {
+        logs.add(log);
+      }
+    }
+
+    return logs;
+  }
+
+  // Helper method to normalize different date formats to YYYY-MM-DD
+  String _normalizeDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+
+    try {
+      // If already in YYYY-MM-DD format
+      if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dateStr)) {
+        return dateStr;
+      }
+
+      // If in "Mon DD, YYYY" format (e.g., "Sep 06, 2025")
+      if (RegExp(r'^[A-Z][a-z]{2} \d{2}, \d{4}$').hasMatch(dateStr)) {
+        final parts = dateStr.split(' ');
+        final monthName = parts[0];
+        final day = parts[1].replaceAll(',', '');
+        final year = parts[2];
+
+        const monthMap = {
+          'Jan': '01',
+          'Feb': '02',
+          'Mar': '03',
+          'Apr': '04',
+          'May': '05',
+          'Jun': '06',
+          'Jul': '07',
+          'Aug': '08',
+          'Sep': '09',
+          'Oct': '10',
+          'Nov': '11',
+          'Dec': '12'
+        };
+
+        final monthNum = monthMap[monthName] ?? '01';
+        return '$year-$monthNum-${day.padLeft(2, '0')}';
+      }
+
+      // Try parsing as DateTime and reformatting
+      final parsedDate = DateTime.tryParse(dateStr);
+      if (parsedDate != null) {
+        return '${parsedDate.year}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')}';
+      }
+
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  bool _hasAnyLogs() {
+    return widget.bleedLogs.isNotEmpty || widget.infusionLogs.isNotEmpty;
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  String _getMonthYearString(DateTime date) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatSelectedDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  IconData _getLogIcon(Map<String, dynamic> log) {
+    if (log['bodyRegion'] != null) {
+      return Icons.bloodtype;
+    } else {
+      return Icons.medical_services;
+    }
+  }
+
+  Color _getLogColor(Map<String, dynamic> log) {
+    if (log['bodyRegion'] != null) {
+      return Colors.redAccent;
+    } else {
+      return Colors.green;
+    }
+  }
+
+  String _getLogSummary(Map<String, dynamic> log) {
+    if (log['bodyRegion'] != null) {
+      return '${log['bodyRegion']} - ${log['severity'] ?? 'Unknown'}';
+    } else {
+      return '${log['medication'] ?? 'Infusion'} - ${log['doseIU'] ?? '0'} IU';
     }
   }
 }

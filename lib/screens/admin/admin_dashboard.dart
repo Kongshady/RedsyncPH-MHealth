@@ -203,7 +203,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         ],
       ),
       child: SafeArea(
-        child: Container(
+        child: SizedBox(
           height: 60,
           child: TabBar(
             controller: _bottomTabController,

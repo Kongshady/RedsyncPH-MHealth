@@ -14,6 +14,7 @@ import 'package:hemophilia_manager/services/openai_service.dart';
 import 'package:hemophilia_manager/services/notification_service.dart';
 import 'package:hemophilia_manager/services/firestore.dart';
 import 'package:hemophilia_manager/services/offline_service.dart';
+import 'package:hemophilia_manager/services/local_medication_reminder_service.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
@@ -58,6 +59,17 @@ void main() async {
     print('Offline service initialized successfully');
   } catch (e) {
     print('Warning: Failed to initialize Offline service: $e');
+  }
+
+  // Initialize Local Medication Reminder service
+  try {
+    final LocalMedicationReminderService localReminderService =
+        LocalMedicationReminderService();
+    await localReminderService.initialize();
+    print('Local Medication Reminder service initialized successfully');
+  } catch (e) {
+    print(
+        'Warning: Failed to initialize Local Medication Reminder service: $e');
   }
 
   runApp(const MyApp());

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hemophilia_manager/services/firestore.dart';
-import 'package:hemophilia_manager/services/notification_service.dart';
-import 'package:hemophilia_manager/services/app_notification_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:hemophilia_manager/services/local_medication_reminder_service.dart';
 
 class ScheduleMedicationScreen extends StatefulWidget {
   const ScheduleMedicationScreen({super.key});
@@ -14,10 +11,8 @@ class ScheduleMedicationScreen extends StatefulWidget {
 }
 
 class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
-  final NotificationService _notificationService = NotificationService();
-  final AppNotificationService _appNotificationService =
-      AppNotificationService();
+  final LocalMedicationReminderService _localReminderService =
+      LocalMedicationReminderService();
   String _medType = 'IV Injection';
   final List<String> _medTypes = ['IV Injection', 'Subcutaneous', 'Oral'];
   final TextEditingController _doseController = TextEditingController();
@@ -206,6 +201,33 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                         label: Text(
                           _isLoading ? 'Setting Schedule...' : 'Set Schedule',
                           style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Test Notification Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _testNotification,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        icon: const Icon(Icons.notification_add, size: 20),
+                        label: const Text(
+                          'Test Notification',
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -924,6 +946,26 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
+  // Test notification method
+  Future<void> _testNotification() async {
+    try {
+      print('🧪 Testing notification...');
+
+      // Test immediate notification
+      await _localReminderService.testNotification();
+
+      // Show dialog
+      _showInfoDialog('Test Notification',
+          'A test notification has been sent. Check your notification panel and ensure notifications are enabled for this app in your device settings.');
+
+      // Also diagnose any issues
+      await _localReminderService.diagnoseNotificationIssues();
+    } catch (e) {
+      print('❌ Test notification failed: $e');
+      _showErrorDialog('Test notification failed: $e');
+    }
+  }
+
   Future<void> _saveSchedule() async {
     // Validate form
     if (_medicationNameController.text.trim().isEmpty) {
@@ -950,8 +992,8 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
         return;
       }
 
-      // Save to Firestore
-      final scheduleId = await _firestoreService.saveMedicationSchedule(
+      // Save to local storage instead of Firebase
+      final scheduleId = await _localReminderService.saveMedicationReminder(
         uid: user.uid,
         medicationName: _medicationNameController.text.trim(),
         dosage: _doseController.text.trim(),
@@ -964,136 +1006,7 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
         notes: _notesController.text.trim(),
       );
 
-      // Schedule notification if enabled
-      if (_notification) {
-        try {
-          await _notificationService.initialize();
-          final permissionsGranted =
-              await _notificationService.requestPermissions();
-
-          if (!permissionsGranted) {
-            _showInfoDialog(
-              'Notification Warning',
-              'Notification permissions were not granted. You may not receive medication reminders. Please enable notifications in your device settings.',
-            );
-          }
-
-          // Generate a unique notification ID based on the schedule ID hash
-          final notificationId = scheduleId.hashCode;
-
-          print('Scheduling notification with ID: $notificationId');
-
-          if (_frequency == 'Daily') {
-            // Schedule daily repeating notification
-            print('Scheduling daily repeating notification...');
-            await _notificationService.scheduleRepeatingMedicationReminder(
-              id: notificationId,
-              title: 'Medication Reminder',
-              body:
-                  'Time to take ${_medicationNameController.text.trim()} (${_doseController.text.trim()})',
-              time: _selectedTime,
-              repeatInterval: RepeatInterval.daily,
-              payload: 'medication_reminder:$scheduleId',
-            );
-            print(
-              'Daily repeating notification scheduled for ${_selectedTime.format(context)}',
-            );
-          } else if (_frequency == 'Every 3 Days') {
-            // Schedule notifications every 3 days
-            print('Scheduling every 3 days notifications...');
-            DateTime currentDate = _startDate;
-            int notificationCounter = 0;
-
-            while (currentDate.isBefore(_endDate) ||
-                currentDate.isAtSameMomentAs(_endDate)) {
-              final scheduledTime = DateTime(
-                currentDate.year,
-                currentDate.month,
-                currentDate.day,
-                _selectedTime.hour,
-                _selectedTime.minute,
-              );
-
-              if (scheduledTime.isAfter(DateTime.now())) {
-                await _notificationService.scheduleMedicationReminder(
-                  id: notificationId + notificationCounter,
-                  title: 'Medication Reminder',
-                  body:
-                      'Time to take ${_medicationNameController.text.trim()} (${_doseController.text.trim()})',
-                  scheduledTime: scheduledTime,
-                  payload: 'medication_reminder:$scheduleId',
-                );
-                notificationCounter++;
-              }
-
-              currentDate = currentDate.add(const Duration(days: 3));
-            }
-            print('Scheduled $notificationCounter notifications every 3 days');
-          } else if (_frequency == 'Once') {
-            // Schedule a single notification
-            print('Scheduling single notification...');
-            final scheduledTime = DateTime(
-              _startDate.year,
-              _startDate.month,
-              _startDate.day,
-              _selectedTime.hour,
-              _selectedTime.minute,
-            );
-
-            final finalScheduledTime = scheduledTime.isBefore(DateTime.now())
-                ? scheduledTime.add(const Duration(days: 1))
-                : scheduledTime;
-
-            await _notificationService.scheduleMedicationReminder(
-              id: notificationId,
-              title: 'Medication Reminder',
-              body:
-                  'Time to take ${_medicationNameController.text.trim()} (${_doseController.text.trim()})',
-              scheduledTime: finalScheduledTime,
-              payload: 'medication_reminder:$scheduleId',
-            );
-            print('Single notification scheduled for: $finalScheduledTime');
-          }
-
-          // Debug: Check pending notifications
-          await _notificationService.debugPendingNotifications();
-
-          // Show a test notification to confirm notifications are working
-          try {
-            await _notificationService.showImmediateNotification(
-              id: 99999,
-              title: 'Medication Schedule Created',
-              body:
-                  'Your medication reminder for ${_medicationNameController.text.trim()} has been set up successfully!',
-              payload: 'schedule_created:$scheduleId',
-            );
-          } catch (e) {
-            print('Failed to show confirmation notification: $e');
-            // Don't fail the entire process if confirmation notification fails
-          }
-
-          // Also create a notification in our AppNotificationService for the in-app notifications
-          try {
-            await _appNotificationService.notifyMedicationReminder(
-              recipientId: user.uid,
-              medicationName: _medicationNameController.text.trim(),
-              dosage: _doseController.text.trim(),
-              scheduledTime: DateTime
-                  .now(), // This is just for creating the notification record
-            );
-          } catch (e) {
-            print('Failed to create in-app notification: $e');
-            // Don't fail the entire process if in-app notification fails
-          }
-        } catch (e) {
-          print('Error scheduling notification: $e');
-          // Don't fail the entire operation if notification fails
-          _showInfoDialog(
-            'Notification Warning',
-            'Your medication was scheduled successfully, but there was an issue setting up notifications. Please check your notification settings and ensure you have granted permission for notifications and exact alarms. You can try rescheduling the medication to fix this issue.',
-          );
-        }
-      }
+      print('✅ Medication reminder saved locally with ID: $scheduleId');
 
       // Show success dialog
       _showSuccessDialog();
@@ -1195,7 +1108,7 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
             ],
           ),
           content: Text(
-            'Your medication reminder has been scheduled successfully from ${_startDate.day}/${_startDate.month}/${_startDate.year} to ${_endDate.day}/${_endDate.month}/${_endDate.year}. You\'ll receive notifications at ${_selectedTime.format(context)}.',
+            'Your medication reminder has been saved locally and scheduled successfully from ${_startDate.day}/${_startDate.month}/${_startDate.year} to ${_endDate.day}/${_endDate.month}/${_endDate.year}. ${_notification ? "You\'ll receive local notifications at ${_selectedTime.format(context)}." : "No notifications will be sent as notifications are disabled."}',
           ),
           actions: [
             TextButton(

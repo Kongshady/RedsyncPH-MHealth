@@ -7,7 +7,6 @@ import 'admin_home_screen.dart';
 import 'admin_approvals_screen.dart';
 import 'admin_events_screen.dart';
 import 'admin_post_reports_screen.dart';
-import '../../services/post_reports_service.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -20,7 +19,6 @@ class _AdminDashboardState extends State<AdminDashboard>
     with TickerProviderStateMixin {
   int _currentIndex = 0;
   final CommunityService _communityService = CommunityService();
-  final PostReportsService _reportsService = PostReportsService();
   late AnimationController _pageAnimationController;
   late TabController _bottomTabController;
 

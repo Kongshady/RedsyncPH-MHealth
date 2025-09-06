@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hemophilia_manager/services/firestore.dart';
+import 'package:hemophilia_manager/services/local_medication_reminder_service.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +16,8 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
   final FirestoreService _firestoreService = FirestoreService();
+  final LocalMedicationReminderService _localReminderService =
+      LocalMedicationReminderService();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   String _userName = '';
   bool _isLoading = true;
@@ -376,13 +379,34 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final reminders = await _firestoreService.getTodaysMedicationReminders(
+        final reminders =
+            await _localReminderService.getTodaysMedicationReminders(
           user.uid,
         );
 
         setState(() {
-          _todaysReminders = reminders;
+          // Convert MedicationReminder objects to Map format for compatibility
+          // Filter out already taken medications
+          _todaysReminders = reminders
+              .where((reminder) =>
+                  !reminder.isTakenToday) // Only show untaken medications
+              .map((reminder) => {
+                    'id': reminder.id,
+                    'medicationName': reminder.medicationName,
+                    'dosage': reminder.dosage,
+                    'administrationType': reminder.administrationType,
+                    'frequency': reminder.frequency,
+                    'reminderDateTime': reminder.todayReminderDateTime,
+                    'isPending': reminder.isPending,
+                    'isOverdue': reminder.isOverdue,
+                    'notes': reminder.notes,
+                    'isTakenToday': reminder.isTakenToday,
+                  })
+              .toList();
         });
+
+        print(
+            '📋 Loaded ${_todaysReminders.length} untaken reminders from local storage');
       }
     } catch (e) {
       print('Error loading today\'s reminders: $e');
@@ -874,6 +898,19 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
   Widget _buildSwipeableMedicationReminder(Map<String, dynamic> reminder) {
     return Slidable(
       key: ValueKey(reminder['id']),
+      startActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        children: [
+          SlidableAction(
+            onPressed: (context) => _editMedicationReminder(reminder),
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            icon: Icons.edit,
+            label: 'Edit',
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ],
+      ),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         children: [
@@ -984,7 +1021,7 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${reminder['dosage'] ?? 'Unknown dosage'} • ${reminder['administrationType'] ?? 'Unknown type'}',
+                  '${reminder['dosage'] ?? 'Unknown dosage'} • ${reminder['administrationType'] ?? 'Unknown type'} • ${reminder['frequency'] ?? 'Unknown frequency'}',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 const SizedBox(height: 2),
@@ -1009,13 +1046,13 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.swipe_left,
+                            Icons.swipe,
                             size: 12,
                             color: Colors.grey.shade600,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Swipe to mark done',
+                            'Swipe left: Done, right: Edit',
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 10,
@@ -1039,8 +1076,8 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // Mark medication as taken
-      await _firestoreService.markMedicationTaken(user.uid, reminder['id']);
+      // Mark medication as taken using local service
+      await _localReminderService.markMedicationTaken(reminder['id']);
 
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1064,6 +1101,43 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to mark medication as taken'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _editMedicationReminder(Map<String, dynamic> reminder) async {
+    try {
+      // Navigate to the medication editing screen with the reminder data
+      final result = await Navigator.pushNamed(
+        context,
+        '/edit_medication_reminder',
+        arguments: reminder,
+      );
+
+      // If the reminder was updated, refresh the list
+      if (result == true) {
+        await _loadTodaysReminders();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.edit, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Medication reminder updated!'),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error navigating to edit medication reminder: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to open edit screen'),
           backgroundColor: Colors.red,
         ),
       );

@@ -13,6 +13,7 @@ import 'package:hemophilia_manager/screens/main_screen/patient_screens/log_infus
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/main_screen_hud.dart';
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/notifications_screen.dart';
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/schedule_medication_screen.dart';
+import 'package:hemophilia_manager/screens/main_screen/patient_screens/edit_medication_reminder_screen.dart';
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/settings_screens/main_settings.dart';
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/settings_screens/user_info_settings.dart';
 import 'package:hemophilia_manager/screens/main_screen/patient_screens/settings_screens/caregiver_info_settings.dart';
@@ -40,6 +41,7 @@ class AppRoutes {
   static const String doseCalculator = '/dose_calculator';
   static const String logBleed = '/log_bleed';
   static const String scheduleMedication = '/schedule_medication';
+  static const String editMedicationReminder = '/edit_medication_reminder';
   static const String userFillup = '/user_fillup';
   static const String userAccountCreated = '/user_account_created';
   static const String userScreen = '/user_screen';
@@ -73,6 +75,7 @@ class AppRoutes {
     doseCalculator: (context) => const DosageCalculatorScreen(),
     logBleed: (context) => const LogBleed(),
     scheduleMedication: (context) => const ScheduleMedicationScreen(),
+    editMedicationReminder: (context) => const EditMedicationReminderScreen(),
     userFillup: (context) => const UserDetails(),
     userAccountCreated: (context) => const UserCreationSuccess(),
     userScreen: (context) => const MainScreenDisplay(),
