@@ -185,6 +185,207 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
     }
   }
 
+  void _showActivityDetails(Map<String, dynamic> activity) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: _getActivityColor(activity['activityType'])
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _getActivityIcon(activity['activityType']),
+                            color: _getActivityColor(activity['activityType']),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _getActivityTitle(activity['activityType']),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                _formatActivityTime(activity),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.close, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Content
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(20),
+                      children: _buildActivityDetailsContent(activity),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildActivityDetailsContent(Map<String, dynamic> activity) {
+    List<Widget> content = [];
+
+    String activityType = activity['activityType'] ?? '';
+
+    if (activityType == 'bleed') {
+      content.addAll(_buildBleedDetails(activity));
+    } else if (activityType == 'infusion') {
+      content.addAll(_buildInfusionDetails(activity));
+    } else if (activityType == 'calculation') {
+      content.addAll(_buildCalculationDetails(activity));
+    }
+
+    return content;
+  }
+
+  List<Widget> _buildBleedDetails(Map<String, dynamic> bleed) {
+    return [
+      _buildDetailItem('Location', bleed['location'] ?? 'Not specified'),
+      _buildDetailItem('Severity', bleed['severity'] ?? 'Not specified'),
+      _buildDetailItem(
+          'Pain Level', '${bleed['painLevel'] ?? 'Not specified'}/10'),
+      _buildDetailItem('Treatment', bleed['treatment'] ?? 'Not specified'),
+      if (bleed['notes'] != null && bleed['notes'].toString().isNotEmpty)
+        _buildDetailItem('Notes', bleed['notes']),
+      if (bleed['date'] != null)
+        _buildDetailItem('Date Recorded', bleed['date']),
+    ];
+  }
+
+  List<Widget> _buildInfusionDetails(Map<String, dynamic> infusion) {
+    return [
+      _buildDetailItem('Medication', infusion['medication'] ?? 'Not specified'),
+      _buildDetailItem('Dosage', infusion['dosage'] ?? 'Not specified'),
+      _buildDetailItem('Lot Number', infusion['lotNumber'] ?? 'Not specified'),
+      _buildDetailItem('Location', infusion['location'] ?? 'Not specified'),
+      if (infusion['notes'] != null && infusion['notes'].toString().isNotEmpty)
+        _buildDetailItem('Notes', infusion['notes']),
+      if (infusion['date'] != null)
+        _buildDetailItem('Date Recorded', infusion['date']),
+    ];
+  }
+
+  List<Widget> _buildCalculationDetails(Map<String, dynamic> calculation) {
+    return [
+      _buildDetailItem(
+          'Weight', '${calculation['weight'] ?? 'Not specified'} kg'),
+      _buildDetailItem(
+          'Factor Level', '${calculation['factorLevel'] ?? 'Not specified'}%'),
+      _buildDetailItem(
+          'Target Level', '${calculation['targetLevel'] ?? 'Not specified'}%'),
+      _buildDetailItem('Calculated Dosage',
+          '${calculation['calculatedDosage'] ?? 'Not specified'} IU'),
+      if (calculation['timestamp'] != null)
+        _buildDetailItem(
+            'Calculated On', _formatCalculationDate(calculation['timestamp'])),
+    ];
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCalculationDate(int timestamp) {
+    try {
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return DateFormat('MMM dd, yyyy - HH:mm').format(date);
+    } catch (e) {
+      return 'Unknown date';
+    }
+  }
+
   void _calculateCounts(
       List<Map<String, dynamic>> bleeds, List<Map<String, dynamic>> infusions) {
     final now = DateTime.now();
@@ -598,13 +799,17 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
                       ..._recentActivities.map(
                         (activity) => Padding(
                           padding: const EdgeInsets.only(bottom: 5),
-                          child: _buildActivityItem(
-                            icon: _getActivityIcon(activity['activityType']),
-                            title: _getActivityTitle(activity['activityType']),
-                            subtitle: _getActivitySubtitle(activity),
-                            time: _formatActivityTime(activity),
-                            iconColor: _getActivityColor(
-                              activity['activityType'],
+                          child: GestureDetector(
+                            onTap: () => _showActivityDetails(activity),
+                            child: _buildActivityItem(
+                              icon: _getActivityIcon(activity['activityType']),
+                              title:
+                                  _getActivityTitle(activity['activityType']),
+                              subtitle: _getActivitySubtitle(activity),
+                              time: _formatActivityTime(activity),
+                              iconColor: _getActivityColor(
+                                activity['activityType'],
+                              ),
                             ),
                           ),
                         ),

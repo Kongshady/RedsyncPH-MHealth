@@ -85,15 +85,7 @@ class LocalMedicationReminderService {
         print('🔧 Running notification diagnostics...');
         await diagnoseNotificationIssues();
 
-        // First test immediate notification to verify system is working
-        try {
-          await _notificationService.showTestNotification();
-          print('✅ Test notification sent successfully');
-        } catch (e) {
-          print('❌ Test notification failed: $e');
-        }
-
-        // Then schedule the actual notifications
+        // Schedule the actual notifications
         await _scheduleNotifications(reminder);
 
         // Show immediate confirmation notification
@@ -461,29 +453,6 @@ class LocalMedicationReminderService {
       final permissions = await _notificationService.requestPermissions();
       results['permissions_granted'] = permissions;
 
-      // Test immediate notification
-      try {
-        await _notificationService.showTestNotification();
-        results['immediate_notification'] = 'success';
-      } catch (e) {
-        results['immediate_notification'] = 'failed: $e';
-      }
-
-      // Test scheduled notification (5 seconds from now)
-      try {
-        final testTime = DateTime.now().add(const Duration(seconds: 5));
-        await _notificationService.scheduleMedicationReminder(
-          id: 99997,
-          title: 'Test Scheduled Notification',
-          body: 'This notification was scheduled 5 seconds ago',
-          scheduledTime: testTime,
-          payload: 'test_scheduled_notification',
-        );
-        results['scheduled_notification'] = 'success';
-      } catch (e) {
-        results['scheduled_notification'] = 'failed: $e';
-      }
-
       // Check pending notifications
       try {
         final pending = await _notificationService.getPendingNotifications();
@@ -516,16 +485,21 @@ class LocalMedicationReminderService {
     return results;
   }
 
-  /// Test notification method for debugging
-  Future<void> testNotification() async {
+  /// Send a test notification to verify the system is working
+  Future<void> sendTestNotification() async {
     try {
-      print('🧪 Sending test notification...');
+      await initialize();
+      print('🧪 Testing local notification...');
 
-      await _notificationService.showTestNotification();
-
+      await _notificationService.showImmediateNotification(
+        id: 999999,
+        title: 'Test Notification',
+        body: 'This is a test notification from Flutter Local Notifications',
+        payload: 'test_notification',
+      );
       print('✅ Test notification sent successfully');
     } catch (e) {
-      print('❌ Test notification failed: $e');
+      print('❌ Error sending test notification: $e');
       rethrow;
     }
   }

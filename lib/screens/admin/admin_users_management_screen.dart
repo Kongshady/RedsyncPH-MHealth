@@ -985,16 +985,6 @@ class _AdminUsersManagementScreenState extends State<AdminUsersManagementScreen>
       final infusionLogs = results[1];
       final posts = results[2];
 
-      // Create export data
-      final exportData = {
-        'user': user,
-        'bleedLogs': bleedLogs.docs.map((doc) => doc.data()).toList(),
-        'infusionLogs': infusionLogs.docs.map((doc) => doc.data()).toList(),
-        'communityPosts': posts.docs.map((doc) => doc.data()).toList(),
-        'exportedAt': DateTime.now().toIso8601String(),
-        'exportedBy': 'admin',
-      };
-
       Navigator.pop(context); // Close loading dialog
 
       // Show export summary

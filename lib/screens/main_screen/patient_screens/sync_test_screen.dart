@@ -78,6 +78,7 @@ class _SyncTestScreenState extends State<SyncTestScreen> {
         date: DateTime.now().toString().substring(0, 10),
         time: TimeOfDay.now().format(context),
         notes: 'Test entry created at ${DateTime.now()}',
+        lotNumber: 'TEST123',
       );
 
       _addLog('✅ Test infusion log created locally');

@@ -34,6 +34,9 @@ class InfusionLog extends HiveObject {
   @HiveField(9)
   bool needsSync;
 
+  @HiveField(10)
+  String lotNumber;
+
   InfusionLog({
     required this.id,
     required this.medication,
@@ -45,6 +48,7 @@ class InfusionLog extends HiveObject {
     required this.createdAt,
     this.syncedAt,
     this.needsSync = true,
+    this.lotNumber = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +60,7 @@ class InfusionLog extends HiveObject {
       'notes': notes,
       'uid': uid,
       'createdAt': createdAt.toIso8601String(),
+      'lotNumber': lotNumber,
     };
   }
 }

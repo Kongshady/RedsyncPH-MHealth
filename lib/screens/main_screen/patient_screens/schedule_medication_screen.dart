@@ -11,7 +11,7 @@ class ScheduleMedicationScreen extends StatefulWidget {
 }
 
 class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
-  final LocalMedicationReminderService _localReminderService =
+  final LocalMedicationReminderService _medicationReminderService =
       LocalMedicationReminderService();
   String _medType = 'IV Injection';
   final List<String> _medTypes = ['IV Injection', 'Subcutaneous', 'Oral'];
@@ -210,30 +210,31 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Test Notification Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton.icon(
-                        onPressed: _testNotification,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    // Test Notification Button (Release mode only)
+                    if (const bool.fromEnvironment('dart.vm.product') == true)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: _testNotification,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.orange,
+                            side: const BorderSide(color: Colors.orange),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        icon: const Icon(Icons.notification_add, size: 20),
-                        label: const Text(
-                          'Test Notification',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                          icon:
+                              const Icon(Icons.notifications_active, size: 18),
+                          label: const Text(
+                            'Test Local Notification',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
                     const SizedBox(height: 16),
                   ],
@@ -946,23 +947,36 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
-  // Test notification method
   Future<void> _testNotification() async {
     try {
-      print('🧪 Testing notification...');
-
-      // Test immediate notification
-      await _localReminderService.testNotification();
-
-      // Show dialog
-      _showInfoDialog('Test Notification',
-          'A test notification has been sent. Check your notification panel and ensure notifications are enabled for this app in your device settings.');
-
-      // Also diagnose any issues
-      await _localReminderService.diagnoseNotificationIssues();
+      await _medicationReminderService.sendTestNotification();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Test notification sent! Check your notifications.'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
-      print('❌ Test notification failed: $e');
-      _showErrorDialog('Test notification failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Error sending test notification: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -993,7 +1007,8 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
       }
 
       // Save to local storage instead of Firebase
-      final scheduleId = await _localReminderService.saveMedicationReminder(
+      final scheduleId =
+          await _medicationReminderService.saveMedicationReminder(
         uid: user.uid,
         medicationName: _medicationNameController.text.trim(),
         dosage: _doseController.text.trim(),
@@ -1015,40 +1030,6 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  void _showInfoDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.info, color: Colors.blue, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(title),
-            ],
-          ),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showErrorDialog(String message) {

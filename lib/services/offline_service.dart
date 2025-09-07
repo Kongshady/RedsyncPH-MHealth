@@ -40,13 +40,19 @@ class OfflineService {
         Hive.registerAdapter(CalculatorHistoryAdapter());
       }
 
-      // Open boxes
-      await Future.wait([
-        Hive.openBox<BleedLog>(_bleedLogsBox),
-        Hive.openBox<InfusionLog>(_infusionLogsBox),
-        Hive.openBox<CalculatorHistory>(_calculatorHistoryBox),
-        Hive.openBox<Map>(_educationalResourcesBox),
-      ]);
+      // Open boxes with error handling for schema changes
+      try {
+        await Future.wait([
+          Hive.openBox<BleedLog>(_bleedLogsBox),
+          Hive.openBox<InfusionLog>(_infusionLogsBox),
+          Hive.openBox<CalculatorHistory>(_calculatorHistoryBox),
+          Hive.openBox<Map>(_educationalResourcesBox),
+        ]);
+      } catch (e) {
+        print('⚠️ Hive schema error detected, attempting to recover: $e');
+        // If there's a schema mismatch, clear the problematic boxes and recreate them
+        await _handleSchemaRecovery();
+      }
 
       _isInitialized = true;
       print('✅ OfflineService initialized successfully');
@@ -144,6 +150,7 @@ class OfflineService {
     required String date,
     required String time,
     required String notes,
+    String lotNumber = '',
   }) async {
     try {
       await initialize();
@@ -158,6 +165,7 @@ class OfflineService {
         date: date,
         time: time,
         notes: notes,
+        lotNumber: lotNumber,
         uid: user.uid,
         createdAt: DateTime.now(),
         needsSync: true,
@@ -418,6 +426,7 @@ class OfflineService {
             date: log.date,
             time: log.time,
             notes: log.notes,
+            lotNumber: log.lotNumber,
           );
 
           // Mark as synced
@@ -567,5 +576,54 @@ class OfflineService {
     final str1 = value1?.toString() ?? '';
     final str2 = value2 ?? '';
     return str1 == str2;
+  }
+
+  /// Handle Hive schema recovery when model structure changes
+  Future<void> _handleSchemaRecovery() async {
+    try {
+      print('🔧 Starting Hive schema recovery...');
+
+      // Close any open boxes first
+      await Hive.close();
+
+      // Delete the problematic boxes to force recreation with new schema
+      try {
+        await Hive.deleteBoxFromDisk(_bleedLogsBox);
+        await Hive.deleteBoxFromDisk(_infusionLogsBox);
+        await Hive.deleteBoxFromDisk(_calculatorHistoryBox);
+        await Hive.deleteBoxFromDisk(_educationalResourcesBox);
+        print('🗑️ Cleared corrupted Hive boxes');
+      } catch (e) {
+        print('⚠️ Could not delete some boxes (they may not exist): $e');
+      }
+
+      // Reinitialize Hive
+      final dir = await getApplicationDocumentsDirectory();
+      Hive.init(dir.path);
+
+      // Re-register adapters
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(InfusionLogAdapter());
+      }
+      if (!Hive.isAdapterRegistered(2)) {
+        Hive.registerAdapter(BleedLogAdapter());
+      }
+      if (!Hive.isAdapterRegistered(3)) {
+        Hive.registerAdapter(CalculatorHistoryAdapter());
+      }
+
+      // Reopen boxes with new schema
+      await Future.wait([
+        Hive.openBox<BleedLog>(_bleedLogsBox),
+        Hive.openBox<InfusionLog>(_infusionLogsBox),
+        Hive.openBox<CalculatorHistory>(_calculatorHistoryBox),
+        Hive.openBox<Map>(_educationalResourcesBox),
+      ]);
+
+      print('✅ Hive schema recovery completed successfully');
+    } catch (e) {
+      print('❌ Schema recovery failed: $e');
+      rethrow;
+    }
   }
 }

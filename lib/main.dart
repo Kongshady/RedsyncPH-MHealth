@@ -33,16 +33,6 @@ void main() async {
     print('Warning: Failed to initialize OpenAI service: $e');
   }
 
-  // Initialize Notification service
-  try {
-    await NotificationService().initialize();
-    print('Notification service initialized successfully');
-  } catch (e) {
-    print('Warning: Failed to initialize Notification service: $e');
-    // App can still function without notifications
-    // Don't rethrow to prevent app startup crash
-  }
-
   // Clean up expired unverified medical accounts
   try {
     final FirestoreService firestoreService = FirestoreService();
@@ -61,11 +51,21 @@ void main() async {
     print('Warning: Failed to initialize Offline service: $e');
   }
 
+  // Initialize Notification service
+  try {
+    await NotificationService().initialize();
+    print('Notification service initialized successfully');
+  } catch (e) {
+    print('Warning: Failed to initialize Notification service: $e');
+    // App can still function without notifications
+    // Don't rethrow to prevent app startup crash
+  }
+
   // Initialize Local Medication Reminder service
   try {
-    final LocalMedicationReminderService localReminderService =
+    final LocalMedicationReminderService medicationReminderService =
         LocalMedicationReminderService();
-    await localReminderService.initialize();
+    await medicationReminderService.initialize();
     print('Local Medication Reminder service initialized successfully');
   } catch (e) {
     print(
@@ -88,7 +88,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Set up notification tap handling
+    // Set up notification tap handling for local notifications
     NotificationService.setNavigationCallback(_handleNotificationTap);
   }
 

@@ -145,6 +145,7 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
                 'medication': log.medication,
                 'doseIU': log.doseIU,
                 'notes': log.notes,
+                'lotNumber': log.lotNumber,
                 'createdAt': log.createdAt,
                 'isOffline': true,
                 'needsSync': log.needsSync,
@@ -610,52 +611,55 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             builder: (context) {
-              return Container(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(2),
+              return SafeArea(
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Add New Log',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Add New Log',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildActionTile(
-                      icon: Icons.bloodtype,
-                      title: 'Log New Bleeding Episode',
-                      subtitle: 'Record a new bleeding incident',
-                      color: Colors.redAccent,
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/log_bleed');
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _buildActionTile(
-                      icon: Icons.medical_services,
-                      title: 'Log New Infusion Taken',
-                      subtitle: 'Record treatment administration',
-                      color: Colors.green,
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/log_infusion');
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 10),
+                      _buildActionTile(
+                        icon: Icons.bloodtype,
+                        title: 'Log New Bleeding Episode',
+                        subtitle: 'Record a new bleeding incident',
+                        color: Colors.redAccent,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, '/log_bleed');
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _buildActionTile(
+                        icon: Icons.medical_services,
+                        title: 'Log New Infusion Taken',
+                        subtitle: 'Record treatment administration',
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, '/log_infusion');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               );
             },
@@ -796,6 +800,21 @@ class _LogHistoryScreenState extends State<LogHistoryScreen>
                                               fontSize: 14,
                                             ),
                                           ),
+                                          if (log['lotNumber'] != null &&
+                                              log['lotNumber']
+                                                  .toString()
+                                                  .isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 4),
+                                              child: Text(
+                                                'Lot: ${log['lotNumber']}',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
                                           const SizedBox(height: 8),
                                           Row(
                                             children: [

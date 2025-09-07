@@ -211,6 +211,8 @@ class _AdminDashboardState extends State<AdminDashboard>
             indicatorColor: Colors.redAccent,
             indicatorWeight: 3.0,
             indicatorSize: TabBarIndicatorSize.label,
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             indicator: BoxDecoration(
               border: Border(
                 top: BorderSide(width: 3.0, color: Colors.redAccent),

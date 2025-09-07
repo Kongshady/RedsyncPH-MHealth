@@ -1064,6 +1064,7 @@ class FirestoreService {
     required String date,
     required String time,
     required String notes,
+    String lotNumber = '',
   }) async {
     try {
       final logData = {
@@ -1073,6 +1074,7 @@ class FirestoreService {
         'date': date,
         'time': time,
         'notes': notes,
+        'lotNumber': lotNumber,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };

@@ -16,6 +16,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _medicationController = TextEditingController();
   final TextEditingController _doseController = TextEditingController();
+  final TextEditingController _lotNumberController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
@@ -27,11 +28,87 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
   final OfflineService _offlineService = OfflineService();
 
   final List<String> _medicationTypes = [
-    'Factor VIII',
-    'Factor IX',
-    'Factor XI',
-    'Desmopressin (DDAVP)',
-    'Antifibrinolytic agents',
+    'Advate',
+    'Adynovate',
+    'Adynovi',
+    'Afstyla',
+    'Alhemo',
+    'Alphanate',
+    'Alpahanine SD',
+    'Alprolix',
+    'Altuviio',
+    'Altuvoct',
+    'Amicar',
+    'Atenativ',
+    'Benefix',
+    'Beriate',
+    'Betafact',
+    'Biostate',
+    'Clottafact',
+    'Coagadex',
+    'Confidex',
+    'Confact',
+    'Elocta',
+    'Eloctate',
+    'Esperoct',
+    'Factane',
+    'Fanhdi',
+    'Feiba',
+    'Feiba NF',
+    'Fibrogammin P',
+    'Fibryga',
+    'Fitusiran',
+    'Haemate P',
+    'Haemosolvate',
+    'Helixate FS',
+    'Helixate Nexgen',
+    'Hemlibra',
+    'Hemofil M',
+    'Hemoleven',
+    'Humate P',
+    'Hympavzi',
+    'Idelvon',
+    'Immunine',
+    'Immuseven',
+    'Ixnity',
+    'Jivi',
+    'Kanokad',
+    'Koate DVI',
+    'Kogenate Bayer',
+    'Kogenate FS',
+    'Kovaltry',
+    'Minirin',
+    'Monoclate P',
+    'Mononine',
+    'Novoeight',
+    'Novoseven',
+    'Novoseven RT',
+    'Novothirteen',
+    'Nuwiq',
+    'Obizur',
+    'Octafix',
+    'Octanate',
+    'Octanine',
+    'Octaplex',
+    'Octosim',
+    'Optivate',
+    'Qtifilia',
+    'Rebinyn',
+    'Recombinate',
+    'Refacto AF',
+    'Refixia',
+    'Riastap',
+    'Rixubis',
+    'Sevenfact',
+    'Stimate',
+    'Tretten',
+    'Veyvondi',
+    'Vonvendi',
+    'Wilate',
+    'Wilfactin',
+    'Xyntha',
+    'Xyntha Solofuse',
+    'Zonovate',
     'Other',
   ];
 
@@ -75,6 +152,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
         date: dateStr,
         time: timeStr,
         notes: _notesController.text.trim(),
+        lotNumber: _lotNumberController.text.trim(),
         createdAt: DateTime.now(),
       );
 
@@ -85,6 +163,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
         date: log.date,
         time: log.time,
         notes: log.notes,
+        lotNumber: log.lotNumber,
       );
 
       if (!mounted) return;
@@ -110,18 +189,34 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
 
       if (!mounted) return;
 
+      // Determine error type and provide helpful message
+      String errorMessage;
+
+      if (e.toString().contains('HiveError') ||
+          e.toString().contains('type') ||
+          e.toString().contains('incompatible') ||
+          e.toString().contains('schema')) {
+        errorMessage =
+            'Database compatibility issue detected. The app will attempt to fix this automatically on the next save attempt.';
+      } else {
+        errorMessage = 'Error saving infusion log: ${e.toString()}';
+      }
+
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Error saving infusion log. Please try again.'),
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(errorMessage),
+              ),
             ],
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {
@@ -242,6 +337,15 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                         keyboardType: TextInputType.number,
                         validator: (v) =>
                             v == null || v.isEmpty ? 'Enter dose amount' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildCustomInput(
+                        controller: _lotNumberController,
+                        label: 'Lot Number',
+                        icon: Icons.qr_code,
+                        hintText: 'Enter lot number (optional)',
+                        keyboardType: TextInputType.text,
                       ),
                       const SizedBox(height: 16),
 

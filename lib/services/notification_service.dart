@@ -104,9 +104,6 @@ class NotificationService {
           print('Post-related notification tapped');
         } else if (payload.startsWith('message:')) {
           print('Message notification tapped');
-        } else if (payload == 'test_notification' ||
-            payload == 'test_scheduled_notification') {
-          print('Test notification tapped');
         }
       }
     } catch (e) {
@@ -223,7 +220,6 @@ class NotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        sound: RawResourceAndroidNotificationSound('notification_sound'),
         enableVibration: true,
         playSound: true,
       );
@@ -594,51 +590,6 @@ class NotificationService {
       platformChannelSpecifics,
       payload: payload,
     );
-  }
-
-  // Test notification to verify notifications are working (offline-compatible)
-  Future<void> showTestNotification() async {
-    try {
-      print('🧪 Starting offline-compatible test notification...');
-
-      await showImmediateNotification(
-        id: 999,
-        title: 'Test Notification (Offline Compatible)',
-        body:
-            'This test notification works offline! System is functioning correctly.',
-        payload: 'test_notification',
-      );
-
-      print('✅ Test notification sent successfully (offline mode supported)');
-    } catch (e) {
-      print('❌ Test notification failed: $e');
-      rethrow;
-    }
-  }
-
-  // Schedule a test notification for 5 seconds from now
-  Future<void> scheduleTestNotification() async {
-    final scheduledTime = DateTime.now().add(Duration(seconds: 5));
-
-    print('Scheduling test notification for: $scheduledTime');
-    print('Current time: ${DateTime.now()}');
-
-    await scheduleMedicationReminder(
-      id: 998,
-      title: 'Test Scheduled Notification',
-      body: 'This test notification was scheduled for 5 seconds ago.',
-      scheduledTime: scheduledTime,
-      payload: 'test_scheduled_notification',
-    );
-
-    // Check pending notifications
-    final pendingNotifications = await getPendingNotifications();
-    print('Total pending notifications: ${pendingNotifications.length}');
-    for (final notification in pendingNotifications) {
-      print(
-        'Pending notification: ID ${notification.id}, title: ${notification.title}',
-      );
-    }
   }
 
   // Get all pending notifications for debugging
