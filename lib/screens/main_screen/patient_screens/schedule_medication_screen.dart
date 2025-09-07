@@ -210,31 +210,7 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Test Notification Button (Release mode only)
-                    if (const bool.fromEnvironment('dart.vm.product') == true)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: _testNotification,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.orange,
-                            side: const BorderSide(color: Colors.orange),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon:
-                              const Icon(Icons.notifications_active, size: 18),
-                          label: const Text(
-                            'Test Local Notification',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
+                    // ...existing code...
 
                     const SizedBox(height: 16),
                   ],
@@ -947,38 +923,7 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
-  Future<void> _testNotification() async {
-    try {
-      await _medicationReminderService.sendTestNotification();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Test notification sent! Check your notifications.'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Error sending test notification: $e')),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
+  // ...existing code...
 
   Future<void> _saveSchedule() async {
     // Validate form
