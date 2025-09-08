@@ -76,8 +76,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
               labelColor: Colors.redAccent,
               unselectedLabelColor: Colors.grey.shade600,
               indicatorWeight: 3,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+              labelStyle:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              unselectedLabelStyle:
+                  const TextStyle(fontWeight: FontWeight.w500),
               tabs: const [
                 Tab(text: 'Overview'),
                 Tab(text: 'History'),
@@ -104,7 +106,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
 
   Widget _buildPatientHeader() {
     final isCaregiver = widget.patientData['role'] == 'caregiver';
-    
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -160,7 +162,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
                         ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -225,7 +228,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
                       'Hemophilia Type',
                       widget.patientData['hemophiliaType'] ?? 'Hemophilia A',
                     ),
-                    _buildHeaderStat('Age', _calculateAge(widget.patientData['dob'])),
+                    _buildHeaderStat(
+                        'Age', _calculateAge(widget.patientData['dob'])),
                     _buildHeaderStat(
                       'Blood Type',
                       widget.patientData['bloodType'] ?? 'Not specified',
@@ -284,7 +288,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
 
   Widget _buildOverviewTab() {
     final isCaregiver = widget.patientData['role'] == 'caregiver';
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
@@ -293,16 +297,23 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
           _buildSectionTitle('Personal Information'),
           const SizedBox(height: 20),
           _buildInfoList([
-            _buildInfoRow('Full Name', widget.patientData['name'] ?? 'Not specified'),
-            _buildInfoRow('Email', widget.patientData['email'] ?? 'Not specified'),
-            _buildInfoRow('Gender', widget.patientData['gender'] ?? 'Not specified'),
-            _buildInfoRow('Date of Birth', _formatDate(widget.patientData['dob'])),
+            _buildInfoRow(
+                'Full Name', widget.patientData['name'] ?? 'Not specified'),
+            _buildInfoRow(
+                'Email', widget.patientData['email'] ?? 'Not specified'),
+            _buildInfoRow(
+                'Gender', widget.patientData['gender'] ?? 'Not specified'),
+            _buildInfoRow(
+                'Date of Birth', _formatDate(widget.patientData['dob'])),
             if (!isCaregiver) ...[
-              _buildInfoRow('Weight', _formatWeight(widget.patientData['weight'])),
-              _buildInfoRow('Blood Type', widget.patientData['bloodType'] ?? 'Not specified'),
+              _buildInfoRow(
+                  'Weight', _formatWeight(widget.patientData['weight'])),
+              _buildInfoRow('Blood Type',
+                  widget.patientData['bloodType'] ?? 'Not specified'),
             ],
             if (isCaregiver) ...[
-              _buildInfoRow('Relationship to Patient', widget.patientData['relationship'] ?? 'Not specified'),
+              _buildInfoRow('Relationship to Patient',
+                  widget.patientData['relationship'] ?? 'Not specified'),
             ],
           ]),
 
@@ -312,10 +323,11 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
             _buildSectionTitle('Medical Information'),
             const SizedBox(height: 20),
             _buildInfoList([
-              _buildInfoRow('Hemophilia Type', widget.patientData['hemophiliaType'] ?? 'Hemophilia A'),
-              _buildInfoRow('Inhibitor Status', widget.patientData['inhibitorStatus'] ?? 'Not specified'),
+              _buildInfoRow('Hemophilia Type',
+                  widget.patientData['hemophiliaType'] ?? 'Hemophilia A'),
+              _buildInfoRow('Inhibitor Status',
+                  widget.patientData['inhibitorStatus'] ?? 'Not specified'),
             ]),
-
             const SizedBox(height: 40),
             _buildSectionTitle('Emergency Contact'),
             const SizedBox(height: 20),
@@ -326,17 +338,22 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  final contact = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+                  final contact =
+                      snapshot.data!.docs.first.data() as Map<String, dynamic>;
                   return _buildInfoList([
-                    _buildInfoRow('Emergency Phone', contact['contactPhone'] ?? 'Not specified'),
-                    _buildInfoRow('Contact Name', contact['contactName'] ?? 'Not specified'),
-                    _buildInfoRow('Relationship', contact['relationship'] ?? 'Not specified'),
+                    _buildInfoRow('Emergency Phone',
+                        contact['contactPhone'] ?? 'Not specified'),
+                    _buildInfoRow('Contact Name',
+                        contact['contactName'] ?? 'Not specified'),
+                    _buildInfoRow('Relationship',
+                        contact['relationship'] ?? 'Not specified'),
                   ]);
                 }
                 return _buildEmptyState(
                   icon: FontAwesomeIcons.phoneSlash,
                   title: 'No emergency contact',
-                  subtitle: 'Patient hasn\'t provided emergency contact information',
+                  subtitle:
+                      'Patient hasn\'t provided emergency contact information',
                 );
               },
             ),
@@ -449,10 +466,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
 
   Widget _buildInfoList(List<Widget> items) {
     return Column(
-      children: items.map((item) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: item,
-      )).toList(),
+      children: items
+          .map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: item,
+              ))
+          .toList(),
     );
   }
 
@@ -1249,12 +1268,13 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
 
   Widget _buildCaregiverPatientInfo() {
     final patientData = widget.patientData;
-    
+
     // Get patient information from caregiver data
     final patientName = patientData['patientName'] ?? 'Not specified';
     final patientAge = patientData['patientAge'] ?? 'Not specified';
     final patientGender = patientData['patientGender'] ?? 'Not specified';
-    final patientHemophiliaType = patientData['patientHemophiliaType'] ?? 'Not specified';
+    final patientHemophiliaType =
+        patientData['patientHemophiliaType'] ?? 'Not specified';
     final patientWeight = patientData['patientWeight'] ?? 'Not specified';
     final patientBloodType = patientData['patientBloodType'] ?? 'Not specified';
     final patientDob = _formatDate(patientData['patientDob']);
@@ -1324,7 +1344,11 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen>
             _buildPatientInfoRow('Gender', patientGender),
             _buildPatientInfoRow('Date of Birth', patientDob),
             _buildPatientInfoRow('Hemophilia Type', patientHemophiliaType),
-            _buildPatientInfoRow('Weight', patientWeight == 'Not specified' ? patientWeight : '$patientWeight kg'),
+            _buildPatientInfoRow(
+                'Weight',
+                patientWeight == 'Not specified'
+                    ? patientWeight
+                    : '$patientWeight kg'),
             _buildPatientInfoRow('Blood Type', patientBloodType),
           ]),
           const SizedBox(height: 20),

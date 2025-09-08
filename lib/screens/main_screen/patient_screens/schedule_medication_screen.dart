@@ -101,36 +101,37 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildCustomInput(
                       controller: _medicationNameController,
                       label: 'Medication Name',
-                      icon: Icons.medical_services_outlined,
-                      hintText: 'e.g., Factor VIII, Desmopressin',
+                      hint: 'Enter medication name',
+                      icon: Icons.medical_services,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDropdownField(
                       value: _medType,
                       items: _medTypes,
                       label: 'Administration Type',
-                      icon: Icons.local_hospital,
+                      icon: Icons.local_pharmacy,
                       onChanged: (val) {
                         if (val != null) setState(() => _medType = val);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildCustomInput(
                       controller: _doseController,
                       label: 'Dosage',
-                      icon: Icons.colorize,
-                      hintText: 'e.g., 1000 IU, 250 mg',
+                      hint: 'Enter dosage (e.g., 2500 IU)',
+                      icon: Icons.science,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildTimeSelector(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDropdownField(
                       value: _frequency,
@@ -141,13 +142,10 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                         if (val != null) setState(() => _frequency = val);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDateSelector(),
-                    const SizedBox(height: 16),
-
-                    _buildNotificationToggle(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     Container(
                       decoration: BoxDecoration(
@@ -172,9 +170,12 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 10),
 
-                    // Set Schedule Button
+                    _buildNotificationToggle(),
+                    const SizedBox(height: 15),
+
+                    // Schedule Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -183,18 +184,18 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
+                          elevation: 2,
                         ),
                         icon: _isLoading
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
                                   strokeWidth: 2,
+                                  color: Colors.white,
                                 ),
                               )
                             : const Icon(Icons.schedule, size: 20),
@@ -207,10 +208,6 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // ...existing code...
 
                     const SizedBox(height: 16),
                   ],
@@ -226,12 +223,12 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
   Widget _buildCustomInput({
     required TextEditingController controller,
     required String label,
+    required String hint,
     required IconData icon,
-    required String hintText,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -239,13 +236,10 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          hintText: hintText,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
-          hintStyle: TextStyle(color: Colors.grey.shade400),
+          hintText: hint,
           prefixIcon: Icon(icon, color: Colors.blueAccent),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.all(16),
         ),
       ),
     );
@@ -256,27 +250,25 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     required List<String> items,
     required String label,
     required IconData icon,
-    required Function(String?) onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: DropdownButtonFormField<String>(
         value: value,
-        items: items
-            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-            .toList(),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(value: item, child: Text(item));
+        }).toList(),
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
           prefixIcon: Icon(icon, color: Colors.blueAccent),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.all(16),
         ),
       ),
     );
@@ -285,45 +277,34 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
   Widget _buildTimeSelector() {
     return GestureDetector(
       onTap: () async {
-        final picked = await showTimePicker(
+        final TimeOfDay? picked = await showTimePicker(
           context: context,
           initialTime: _selectedTime,
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: Colors.blueAccent,
-                  onPrimary: Colors.white,
-                ),
-              ),
-              child: child!,
-            );
-          },
         );
-        if (picked != null) {
+        if (picked != null && picked != _selectedTime) {
           setState(() => _selectedTime = picked);
         }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
           children: [
-            const Icon(Icons.access_time, color: Colors.blueAccent, size: 20),
-            const SizedBox(width: 12),
+            const Icon(Icons.access_time, color: Colors.blueAccent),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Reminder Time',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -333,7 +314,6 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
                     ),
                   ),
                 ],
@@ -347,30 +327,36 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
   }
 
   Widget _buildDateSelector() {
-    return _buildExpandableCalendar();
+    return _buildModernCalendarSelector();
   }
 
-  Widget _buildExpandableCalendar() {
-    return GestureDetector(
-      onTap: () => _showCalendarPopup(),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+  Widget _buildModernCalendarSelector() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Header Section
-            Row(
+            child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -385,177 +371,156 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Medication Schedule',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tap to set dates',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                const Expanded(
+                  child: Text(
+                    'Treatment Period',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey.shade400,
-                  size: 20,
+                GestureDetector(
+                  onTap: _showModernCalendarDialog,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
+          ),
 
-            const SizedBox(height: 16),
+          // Date Cards
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Start Date Card
+                Expanded(
+                  child: _buildDateCard(
+                    'Start Date',
+                    _startDate,
+                    Icons.play_circle_filled,
+                    Colors.green,
+                    () => _selectStartDate(),
+                  ),
+                ),
 
-            // Date Display Section
+                // Arrow
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    color: Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ),
+
+                // End Date Card
+                Expanded(
+                  child: _buildDateCard(
+                    'End Date',
+                    _endDate,
+                    Icons.stop_circle,
+                    Colors.red,
+                    () => _selectEndDate(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Duration Info
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.timelapse,
+                  color: Colors.amber.shade700,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${_endDate.difference(_startDate).inDays + 1} days treatment',
+                  style: TextStyle(
+                    color: Colors.amber.shade700,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateCard(String label, DateTime date, IconData icon, Color color,
+      VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
-                // Start Date
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.play_arrow,
-                              color: Colors.green,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Start Date',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.green.shade700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${_startDate.day}/${_startDate.month}/${_startDate.year}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Arrow indicator
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward,
-                    color: Colors.blueAccent,
-                    size: 16,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // End Date
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.stop_circle,
-                              color: Colors.red,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'End Date',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.red.shade700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${_endDate.day}/${_endDate.month}/${_endDate.year}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: color.withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            // Duration Display
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+            const SizedBox(height: 8),
+            Text(
+              _formatDateDisplay(date),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.timeline,
-                      color: Colors.blueAccent, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${_endDate.difference(_startDate).inDays + 1} day${_endDate.difference(_startDate).inDays != 0 ? 's' : ''} of treatment',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            ),
+            Text(
+              _formatDayName(date),
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -564,310 +529,310 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
-  Future<void> _showCalendarPopup() async {
-    bool _isSelectingEndDate = false;
-    DateTime tempStartDate = _startDate;
-    DateTime tempEndDate = _endDate;
+  String _formatDateDisplay(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]}';
+  }
 
-    await showDialog(
+  String _formatDayName(DateTime date) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[date.weekday - 1];
+  }
+
+  Future<void> _selectStartDate() async {
+    final DateTime? picked = await showDatePicker(
       context: context,
+      initialDate: _startDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.green,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+        // Auto-adjust end date if it's before start date
+        if (_endDate.isBefore(_startDate)) {
+          _endDate = _startDate.add(const Duration(days: 7));
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: _startDate,
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.red,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+    }
+  }
+
+  void _showModernCalendarDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.9,
-                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                padding: const EdgeInsets.all(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Header
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_month,
-                            color: Colors.blueAccent,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Select Medication Dates',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                Text(
-                                  _isSelectingEndDate
-                                      ? 'Tap to select end date'
-                                      : 'Tap to select start date',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _isSelectingEndDate
-                                        ? Colors.red.shade600
-                                        : Colors.green.shade600,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: Icon(
-                              Icons.close,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 16),
-
-                      // Date Selection Tabs (like flight booking)
-                      Container(
+                      child: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.blueAccent,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Select Treatment Period',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Quick Duration Buttons
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Quick Duration',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blueAccent.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildQuickDurationChip('3 Days', 3),
+                    _buildQuickDurationChip('1 Week', 7),
+                    _buildQuickDurationChip('2 Weeks', 14),
+                    _buildQuickDurationChip('1 Month', 30),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Date Selection
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade100),
                         ),
-                        child: Row(
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setDialogState(
-                                  () => _isSelectingEndDate = false,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: !_isSelectingEndDate
-                                        ? Colors.green
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'Start Date',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: !_isSelectingEndDate
-                                              ? Colors.white
-                                              : Colors.grey.shade600,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${tempStartDate.day}/${tempStartDate.month}/${tempStartDate.year}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: !_isSelectingEndDate
-                                              ? Colors.white
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setDialogState(
-                                  () => _isSelectingEndDate = true,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _isSelectingEndDate
-                                        ? Colors.red
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'End Date',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _isSelectingEndDate
-                                              ? Colors.white
-                                              : Colors.grey.shade600,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${tempEndDate.day}/${tempEndDate.month}/${tempEndDate.year}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: _isSelectingEndDate
-                                              ? Colors.white
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Custom Range Calendar
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _isSelectingEndDate
-                                ? Colors.red.shade300
-                                : Colors.green.shade300,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: _buildRangeCalendar(
-                          tempStartDate,
-                          tempEndDate,
-                          _isSelectingEndDate,
-                          (DateTime date) {
-                            setDialogState(() {
-                              if (_isSelectingEndDate) {
-                                tempEndDate = date;
-                                // Auto-switch to start date if user hasn't set it properly
-                                if (tempEndDate.isBefore(tempStartDate)) {
-                                  tempStartDate = tempEndDate.subtract(
-                                    const Duration(days: 1),
-                                  );
-                                }
-                              } else {
-                                tempStartDate = date;
-                                // Auto-adjust end date if it's before start date
-                                if (tempEndDate.isBefore(tempStartDate)) {
-                                  tempEndDate = tempStartDate.add(
-                                    const Duration(days: 7),
-                                  );
-                                }
-                                // Auto-switch to end date selection after selecting start date
-                                _isSelectingEndDate = true;
-                              }
-                            });
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Duration Display
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.timeline,
-                              color: Colors.blueAccent,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${tempEndDate.difference(tempStartDate).inDays + 1} day${tempEndDate.difference(tempStartDate).inDays != 0 ? 's' : ''} of treatment',
+                            const Text(
+                              'Start Date',
                               style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.blue.shade700,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.green,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Action buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Update the main widget state
-                                setState(() {
-                                  _startDate = tempStartDate;
-                                  _endDate = tempEndDate;
-                                });
-                                Navigator.of(context).pop();
-                              },
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: _selectStartDate,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
+                                backgroundColor: Colors.green.shade100,
+                                foregroundColor: Colors.green.shade700,
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                               ),
-                              child: const Text(
-                                'Confirm Dates',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                              child: Text(_formatDateDisplay(_startDate)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade100),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'End Date',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: _selectEndDate,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade100,
+                                foregroundColor: Colors.red.shade700,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                              ),
+                              child: Text(_formatDateDisplay(_endDate)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Duration Display
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: Colors.blue.shade700,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_endDate.difference(_startDate).inDays + 1} days treatment period',
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickDurationChip(String label, int days) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _startDate = DateTime.now();
+          _endDate = _startDate.add(Duration(days: days - 1));
+        });
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.blue.shade200),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 
@@ -886,29 +851,42 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _notification ? Colors.blueAccent : Colors.grey.shade400,
+              color: _notification
+                  ? Colors.blueAccent.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child:
-                const Icon(Icons.notifications, color: Colors.white, size: 20),
+            child: Icon(
+              Icons.notifications,
+              color: _notification ? Colors.blueAccent : Colors.grey,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Push Notifications',
+                Text(
+                  'Notifications',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: Colors.black87,
+                    color:
+                        _notification ? Colors.black87 : Colors.grey.shade600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  'Get reminded when it\'s time to take your medication',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  _notification
+                      ? 'You will receive reminders'
+                      : 'No reminders will be sent',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _notification
+                        ? Colors.blue.shade600
+                        : Colors.grey.shade500,
+                  ),
                 ),
               ],
             ),
@@ -923,17 +901,10 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
-  // ...existing code...
-
   Future<void> _saveSchedule() async {
-    // Validate form
-    if (_medicationNameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter the medication name');
-      return;
-    }
-
-    if (_doseController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter the dosage');
+    if (_medicationNameController.text.trim().isEmpty ||
+        _doseController.text.trim().isEmpty) {
+      _showErrorDialog('Please fill in all required fields');
       return;
     }
 
@@ -982,21 +953,11 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
+          title: const Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.error, color: Colors.red, size: 24),
-              ),
-              const SizedBox(width: 12),
-              const Text('Error'),
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Error'),
             ],
           ),
           content: Text(message),
@@ -1016,31 +977,25 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
+          backgroundColor: Colors.white,
+          title: const Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.green, size: 24),
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 8),
+              Text(
+                'Success',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 12),
-              const Text('Schedule Set!'),
             ],
           ),
-          content: Text(
-            'Your medication reminder has been saved locally and scheduled successfully from ${_startDate.day}/${_startDate.month}/${_startDate.year} to ${_endDate.day}/${_endDate.month}/${_endDate.year}. ${_notification ? "You\'ll receive local notifications at ${_selectedTime.format(context)}." : "No notifications will be sent as notifications are disabled."}',
+          content: const Text(
+            'Medication schedule has been set successfully! You will receive notifications at the scheduled times.',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Return to previous screen
               },
               child: const Text('OK'),
             ),
@@ -1050,222 +1005,11 @@ class _ScheduleMedicationScreenState extends State<ScheduleMedicationScreen> {
     );
   }
 
-  Widget _buildRangeCalendar(
-    DateTime startDate,
-    DateTime endDate,
-    bool isSelectingEndDate,
-    Function(DateTime) onDateSelected,
-  ) {
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month);
-    final daysInMonth = DateTime(
-      currentMonth.year,
-      currentMonth.month + 1,
-      0,
-    ).day;
-    final firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
-    final startingWeekday = firstDayOfMonth.weekday;
-
-    return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Month header
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                '${_monthNames[currentMonth.month - 1]} ${currentMonth.year}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-
-            // Weekday headers
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                    .map(
-                      (day) => Expanded(
-                        child: Container(
-                          height: 25,
-                          child: Center(
-                            child: Text(
-                              day,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-
-            // Calendar grid
-            ...List.generate(
-              6, // Max 6 weeks in a month view
-              (weekIndex) {
-                List<Widget> dayWidgets = [];
-
-                for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
-                  final dayNumber =
-                      weekIndex * 7 + dayIndex - startingWeekday + 2;
-
-                  if (dayNumber < 1 || dayNumber > daysInMonth) {
-                    // Empty day
-                    dayWidgets.add(
-                      Expanded(
-                        child: Container(
-                            height: 32, margin: const EdgeInsets.all(1)),
-                      ),
-                    );
-                  } else {
-                    final date = DateTime(
-                      currentMonth.year,
-                      currentMonth.month,
-                      dayNumber,
-                    );
-                    final isToday = date.day == now.day &&
-                        date.month == now.month &&
-                        date.year == now.year;
-                    final isStartDate = date.day == startDate.day &&
-                        date.month == startDate.month &&
-                        date.year == startDate.year;
-                    final isEndDate = date.day == endDate.day &&
-                        date.month == endDate.month &&
-                        date.year == endDate.year;
-                    final isInRange = date.isAfter(
-                            startDate.subtract(const Duration(days: 1))) &&
-                        date.isBefore(endDate.add(const Duration(days: 1)));
-                    final isPastDate = date.isBefore(
-                      DateTime(now.year, now.month, now.day),
-                    );
-
-                    dayWidgets.add(
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: isPastDate ? null : () => onDateSelected(date),
-                          child: Container(
-                            height: 32,
-                            margin: const EdgeInsets.all(1),
-                            decoration: BoxDecoration(
-                              color: _getDayBackgroundColor(
-                                isStartDate,
-                                isEndDate,
-                                isInRange,
-                                isToday,
-                                isPastDate,
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                              border: isToday
-                                  ? Border.all(
-                                      color: Colors.blueAccent,
-                                      width: 1.5,
-                                    )
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Text(
-                                dayNumber.toString(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: (isStartDate || isEndDate)
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: _getDayTextColor(
-                                    isStartDate,
-                                    isEndDate,
-                                    isInRange,
-                                    isPastDate,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                }
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 1),
-                  child: Row(children: dayWidgets),
-                );
-              },
-            ).where((row) {
-              // Only show rows that have at least one valid day
-              return row.child is Row &&
-                  ((row.child as Row).children.any(
-                        (child) =>
-                            child is Expanded && child.child is GestureDetector,
-                      ));
-            }).toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getDayBackgroundColor(
-    bool isStartDate,
-    bool isEndDate,
-    bool isInRange,
-    bool isToday,
-    bool isPastDate,
-  ) {
-    if (isPastDate) return Colors.grey.shade100;
-    if (isStartDate) return Colors.green;
-    if (isEndDate) return Colors.red;
-    if (isInRange) return Colors.blue.shade100;
-    if (isToday) return Colors.transparent;
-    return Colors.transparent;
-  }
-
-  Color _getDayTextColor(
-    bool isStartDate,
-    bool isEndDate,
-    bool isInRange,
-    bool isPastDate,
-  ) {
-    if (isPastDate) return Colors.grey.shade400;
-    if (isStartDate || isEndDate) return Colors.white;
-    if (isInRange) return Colors.blue.shade700;
-    return Colors.black87;
-  }
-
-  static const List<String> _monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   @override
   void dispose() {
-    _doseController.dispose();
     _medicationNameController.dispose();
+    _doseController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 }
-
-// TODO: Add calendar integration for medication reminders

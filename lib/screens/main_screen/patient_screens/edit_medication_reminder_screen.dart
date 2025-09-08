@@ -59,13 +59,41 @@ class _EditMedicationReminderScreenState
     _frequency = _originalReminder['frequency'] ?? 'Daily';
     _notification = _originalReminder['notificationEnabled'] ?? true;
 
-    // Parse reminder time
-    final reminderTime = _originalReminder['reminderDateTime'] as DateTime?;
-    if (reminderTime != null) {
-      _selectedTime = TimeOfDay(
-        hour: reminderTime.hour,
-        minute: reminderTime.minute,
-      );
+    // Parse reminder time - check multiple possible formats
+    if (_originalReminder.containsKey('reminderTimeHour') &&
+        _originalReminder.containsKey('reminderTimeMinute')) {
+      // Format 1: Separate hour and minute fields
+      final hour = _originalReminder['reminderTimeHour'] as int? ?? 9;
+      final minute = _originalReminder['reminderTimeMinute'] as int? ?? 0;
+      _selectedTime = TimeOfDay(hour: hour, minute: minute);
+    } else if (_originalReminder.containsKey('reminderDateTime')) {
+      // Format 2: DateTime object
+      final reminderTime = _originalReminder['reminderDateTime'] as DateTime?;
+      if (reminderTime != null) {
+        _selectedTime = TimeOfDay(
+          hour: reminderTime.hour,
+          minute: reminderTime.minute,
+        );
+      }
+    } else if (_originalReminder.containsKey('reminderTime')) {
+      // Format 3: TimeOfDay or string format
+      final reminderTime = _originalReminder['reminderTime'];
+      if (reminderTime is TimeOfDay) {
+        _selectedTime = reminderTime;
+      } else if (reminderTime is String) {
+        // Parse string format like "09:00"
+        try {
+          final parts = reminderTime.split(':');
+          if (parts.length == 2) {
+            _selectedTime = TimeOfDay(
+              hour: int.parse(parts[0]),
+              minute: int.parse(parts[1]),
+            );
+          }
+        } catch (e) {
+          print('Error parsing reminder time: $e');
+        }
+      }
     }
 
     // Set dates (using current logic for now)
@@ -88,7 +116,7 @@ class _EditMedicationReminderScreenState
       appBar: AppBar(
         title: const Text(
           'Edit Medication Reminder',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
@@ -165,7 +193,7 @@ class _EditMedicationReminderScreenState
                       icon: Icons.medication,
                       hintText: 'Enter medication name',
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildCustomInput(
                       controller: _doseController,
@@ -173,7 +201,7 @@ class _EditMedicationReminderScreenState
                       icon: Icons.medical_services,
                       hintText: 'e.g., 500mg, 2 tablets',
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDropdown(
                       label: 'Administration Type',
@@ -183,10 +211,10 @@ class _EditMedicationReminderScreenState
                         if (val != null) setState(() => _medType = val);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildTimeSelector(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDropdown(
                       label: 'Frequency',
@@ -196,13 +224,10 @@ class _EditMedicationReminderScreenState
                         if (val != null) setState(() => _frequency = val);
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     _buildDateSelector(),
-                    const SizedBox(height: 16),
-
-                    _buildNotificationToggle(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
                     Container(
                       decoration: BoxDecoration(
@@ -227,7 +252,10 @@ class _EditMedicationReminderScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 10),
+
+                    _buildNotificationToggle(),
+                    const SizedBox(height: 15),
 
                     // Update Button
                     SizedBox(
@@ -332,8 +360,9 @@ class _EditMedicationReminderScreenState
   }
 
   Widget _buildTimeSelector() {
-    return GestureDetector(
+    return InkWell(
       onTap: _selectTime,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -368,7 +397,7 @@ class _EditMedicationReminderScreenState
                 ],
               ),
             ),
-            Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400),
+            Icon(Icons.edit, color: Colors.grey.shade400, size: 20),
           ],
         ),
       ),
@@ -387,10 +416,10 @@ class _EditMedicationReminderScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
-              const Icon(Icons.calendar_today, color: Colors.blueAccent),
-              const SizedBox(width: 12),
-              const Text(
+            children: const [
+              Icon(Icons.calendar_today, color: Colors.blueAccent),
+              SizedBox(width: 12),
+              Text(
                 'Treatment Duration',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -542,8 +571,21 @@ class _EditMedicationReminderScreenState
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blueAccent,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-    if (picked != null) {
+    if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
       });
@@ -604,7 +646,12 @@ class _EditMedicationReminderScreenState
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Reminder'),
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Delete Reminder',
+            style:
+                TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+          ),
           content: const Text(
             'Are you sure you want to delete this medication reminder? This action cannot be undone.',
           ),
@@ -683,11 +730,14 @@ class _EditMedicationReminderScreenState
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Row(
             children: [
               Icon(Icons.check_circle, color: Colors.green),
               SizedBox(width: 8),
-              Text('Success!'),
+              Text('Success!',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.green)),
             ],
           ),
           content: const Text(

@@ -15,6 +15,7 @@ import 'package:hemophilia_manager/services/notification_service.dart';
 import 'package:hemophilia_manager/services/firestore.dart';
 import 'package:hemophilia_manager/services/offline_service.dart';
 import 'package:hemophilia_manager/services/local_medication_reminder_service.dart';
+import 'package:hemophilia_manager/services/medication_notification_service.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
@@ -70,6 +71,16 @@ void main() async {
   } catch (e) {
     print(
         'Warning: Failed to initialize Local Medication Reminder service: $e');
+  }
+
+  // Initialize Medication Notification service for in-app notifications
+  try {
+    final MedicationNotificationService medicationNotificationService =
+        MedicationNotificationService();
+    await medicationNotificationService.initialize();
+    print('Medication Notification service initialized successfully');
+  } catch (e) {
+    print('Warning: Failed to initialize Medication Notification service: $e');
   }
 
   runApp(const MyApp());

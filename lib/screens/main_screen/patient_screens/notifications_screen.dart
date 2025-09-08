@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/firestore.dart';
+import '../../../services/medication_notification_service.dart';
 import '../../../widgets/offline_indicator.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final MedicationNotificationService _medicationNotificationService =
+      MedicationNotificationService();
   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
@@ -39,7 +42,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete All Notifications'),
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Delete All Notifications',
+            style:
+                TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+          ),
           content: const Text(
             'Are you sure you want to delete all notifications? This action cannot be undone.',
           ),
@@ -77,6 +85,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Method to manually check for due medications (for testing)
+  Future<void> _checkMedicationReminders() async {
+    try {
+      await _medicationNotificationService.checkNow();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Checked for medication reminders'),
+          backgroundColor: Colors.blue,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error checking medications: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,6 +120,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         foregroundColor: Colors.redAccent,
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: _checkMedicationReminders,
+            icon: const Icon(Icons.medication, size: 18),
+            tooltip: 'Check medication reminders',
+          ),
           IconButton(
             onPressed: _markAllAsRead,
             icon: const Icon(FontAwesomeIcons.checkDouble, size: 18),
@@ -308,12 +343,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final isRead = data['read'] ?? false;
     final text = data['text'] ?? 'No message';
     final timestamp = data['timestamp'];
+    final type = data['type'] as String?;
+
+    // Get icon and color based on notification type
+    final iconData = _getNotificationIcon(type);
+    final iconColor = _getNotificationColor(type, isRead);
+    final backgroundColor = _getNotificationBackgroundColor(type, isRead);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isRead ? Colors.grey.shade50 : Colors.red.shade50,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isRead ? Colors.grey.shade200 : Colors.red.shade200,
@@ -338,12 +379,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               decoration: BoxDecoration(
                 color: isRead
                     ? Colors.grey.shade200
-                    : Colors.redAccent.withOpacity(0.1),
+                    : _getNotificationIconBackgroundColor(type),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
-                FontAwesomeIcons.bell,
-                color: isRead ? Colors.grey.shade500 : Colors.redAccent,
+                iconData,
+                color: iconColor,
                 size: 16,
               ),
             ),
@@ -424,6 +465,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         break;
       case 'bleeding_log':
         _navigateToBleedingLog(data);
+        break;
+      case 'medication_reminder':
+        _navigateToMedicationReminder(data);
         break;
       default:
         // Unknown notification type
@@ -544,6 +588,200 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
     );
+  }
+
+  // Navigate to medication reminder details
+  void _navigateToMedicationReminder(Map<String, dynamic> data) {
+    final medicationName = data['medicationName'] as String?;
+    final dosage = data['dosage'] as String?;
+    final administrationType = data['administrationType'] as String?;
+    final scheduledTime = data['scheduledTime'] as String?;
+    final frequency = data['frequency'] as String?;
+
+    // Close notifications screen first
+    Navigator.of(context).pop();
+
+    // Show medication reminder details
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.medication,
+                color: Colors.blue.shade700,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Medication Reminder',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (medicationName != null) ...[
+              Text(
+                'Medication: $medicationName',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (dosage != null) ...[
+              Text('Dosage: $dosage'),
+              const SizedBox(height: 4),
+            ],
+            if (administrationType != null) ...[
+              Text('Type: $administrationType'),
+              const SizedBox(height: 4),
+            ],
+            if (scheduledTime != null) ...[
+              Text('Scheduled Time: $scheduledTime'),
+              const SizedBox(height: 4),
+            ],
+            if (frequency != null) ...[
+              Text('Frequency: $frequency'),
+              const SizedBox(height: 8),
+            ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.green.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Remember to take your medication as prescribed. If you have any questions, consult your healthcare provider.',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to medication reminders screen
+              Navigator.pushNamed(context, '/medication-reminders');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+            ),
+            child: const Text(
+              'View All Reminders',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper methods for notification styling
+  IconData _getNotificationIcon(String? type) {
+    switch (type) {
+      case 'medication_reminder':
+        return Icons.medication;
+      case 'post_like':
+      case 'post_comment':
+      case 'post_share':
+        return FontAwesomeIcons.heart;
+      case 'message':
+        return FontAwesomeIcons.message;
+      case 'bleeding_log':
+        return FontAwesomeIcons.droplet;
+      default:
+        return FontAwesomeIcons.bell;
+    }
+  }
+
+  Color _getNotificationColor(String? type, bool isRead) {
+    if (isRead) return Colors.grey.shade500;
+
+    switch (type) {
+      case 'medication_reminder':
+        return Colors.blue.shade600;
+      case 'post_like':
+      case 'post_comment':
+      case 'post_share':
+        return Colors.pink.shade600;
+      case 'message':
+        return Colors.green.shade600;
+      case 'bleeding_log':
+        return Colors.red.shade600;
+      default:
+        return Colors.redAccent;
+    }
+  }
+
+  Color _getNotificationBackgroundColor(String? type, bool isRead) {
+    if (isRead) return Colors.grey.shade50;
+
+    switch (type) {
+      case 'medication_reminder':
+        return Colors.blue.shade50;
+      case 'post_like':
+      case 'post_comment':
+      case 'post_share':
+        return Colors.pink.shade50;
+      case 'message':
+        return Colors.green.shade50;
+      case 'bleeding_log':
+        return Colors.red.shade50;
+      default:
+        return Colors.red.shade50;
+    }
+  }
+
+  Color _getNotificationIconBackgroundColor(String? type) {
+    switch (type) {
+      case 'medication_reminder':
+        return Colors.blue.withOpacity(0.1);
+      case 'post_like':
+      case 'post_comment':
+      case 'post_share':
+        return Colors.pink.withOpacity(0.1);
+      case 'message':
+        return Colors.green.withOpacity(0.1);
+      case 'bleeding_log':
+        return Colors.red.withOpacity(0.1);
+      default:
+        return Colors.redAccent.withOpacity(0.1);
+    }
   }
 
   String _formatTime(dynamic timestamp) {

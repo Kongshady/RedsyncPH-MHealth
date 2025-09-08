@@ -746,6 +746,7 @@ class _DosageCalculatorScreenState extends State<DosageCalculatorScreen> {
 
   void _showCalculationHistory() {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -803,7 +804,7 @@ class _DosageCalculatorScreenState extends State<DosageCalculatorScreen> {
                     : ListView.separated(
                         controller: scrollController,
                         itemCount: calculationHistory.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, __) => const SizedBox(height: 5),
                         itemBuilder: (context, index) {
                           final calc = calculationHistory[index];
                           final timestamp = calc['createdAt']?.toDate();
@@ -879,46 +880,6 @@ class _DosageCalculatorScreenState extends State<DosageCalculatorScreen> {
                                     ),
                                 ],
                               ),
-                              trailing: Icon(Icons.chevron_right,
-                                  color: Colors.grey.shade400),
-                              onTap: () {
-                                // Optionally show details or allow actions
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
-                                    title: const Text('Calculation Details'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            'Dosage: ${calc['calculatedDosage'].toStringAsFixed(2)} IU'),
-                                        Text('Type: ${calc['hemophiliaType']}'),
-                                        Text('Weight: ${calc['weight']} kg'),
-                                        Text(
-                                            'Target Level: ${calc['targetFactorLevel']}%'),
-                                        if (calc['notes'] != null &&
-                                            calc['notes'].isNotEmpty)
-                                          Text('Notes: ${calc['notes']}'),
-                                        if (timestamp != null)
-                                          Text(
-                                              'Date: ${timestamp.day}/${timestamp.month}/${timestamp.year} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}'),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        child: const Text('Close'),
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
                             ),
                           );
                         },

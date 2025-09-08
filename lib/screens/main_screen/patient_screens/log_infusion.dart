@@ -316,7 +316,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                           }
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       _buildCustomInput(
                         controller: _medicationController,
@@ -327,7 +327,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                             ? 'Enter medication name'
                             : null,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       _buildCustomInput(
                         controller: _doseController,
@@ -338,7 +338,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                         validator: (v) =>
                             v == null || v.isEmpty ? 'Enter dose amount' : null,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       _buildCustomInput(
                         controller: _lotNumberController,
@@ -347,10 +347,10 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                         hintText: 'Enter lot number (optional)',
                         keyboardType: TextInputType.text,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       _buildDateTimeSelector(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       Container(
                         decoration: BoxDecoration(
@@ -376,7 +376,7 @@ class _LogInfusionScreenState extends State<LogInfusionScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 10),
 
                       // Save Button
                       SizedBox(

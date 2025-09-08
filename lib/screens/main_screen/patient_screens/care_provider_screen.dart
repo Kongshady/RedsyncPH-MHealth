@@ -86,7 +86,7 @@ class _CareProviderScreenState extends State<CareProviderScreen> {
       appBar: AppBar(
         title: const Text(
           'Healthcare Providers',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -95,7 +95,12 @@ class _CareProviderScreenState extends State<CareProviderScreen> {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Healthcare Providers'),
+                  backgroundColor: Colors.white,
+                  title: const Text(
+                    'Healthcare Providers',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.green),
+                  ),
                   content: const Text(
                     'Search for healthcare professionals by name to connect with them for your hemophilia care.',
                   ),

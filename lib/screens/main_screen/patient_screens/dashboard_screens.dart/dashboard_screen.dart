@@ -306,9 +306,6 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
     return [
       _buildDetailItem('Location', bleed['location'] ?? 'Not specified'),
       _buildDetailItem('Severity', bleed['severity'] ?? 'Not specified'),
-      _buildDetailItem(
-          'Pain Level', '${bleed['painLevel'] ?? 'Not specified'}/10'),
-      _buildDetailItem('Treatment', bleed['treatment'] ?? 'Not specified'),
       if (bleed['notes'] != null && bleed['notes'].toString().isNotEmpty)
         _buildDetailItem('Notes', bleed['notes']),
       if (bleed['date'] != null)
@@ -321,7 +318,6 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
       _buildDetailItem('Medication', infusion['medication'] ?? 'Not specified'),
       _buildDetailItem('Dosage', infusion['dosage'] ?? 'Not specified'),
       _buildDetailItem('Lot Number', infusion['lotNumber'] ?? 'Not specified'),
-      _buildDetailItem('Location', infusion['location'] ?? 'Not specified'),
       if (infusion['notes'] != null && infusion['notes'].toString().isNotEmpty)
         _buildDetailItem('Notes', infusion['notes']),
       if (infusion['date'] != null)
@@ -1241,7 +1237,7 @@ class _DashboardState extends State<Dashboard> with WidgetsBindingObserver {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Scheduled for $timeString',
+                      'For $timeString',
                       style: TextStyle(
                         color: Colors.grey.shade500,
                         fontSize: 12,

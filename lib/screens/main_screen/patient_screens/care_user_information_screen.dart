@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hemophilia_manager/services/firestore.dart'; // Update with your actual import
 
-
 class CareUserInformationScreen extends StatefulWidget {
   const CareUserInformationScreen({super.key});
 
@@ -19,18 +18,21 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
 
   Future<void> _toggleDataSharing(bool value) async {
     setState(() => _isLoading = true);
-    
+
     try {
-      final provider = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final provider =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final currentUser = FirebaseAuth.instance.currentUser;
-      
+
       if (provider == null || currentUser == null) {
         throw Exception('Missing provider or user information');
       }
 
       if (value) {
         // Send data sharing request
-        await FirebaseFirestore.instance.collection('data_sharing_requests').add({
+        await FirebaseFirestore.instance
+            .collection('data_sharing_requests')
+            .add({
           'patientUid': currentUser.uid,
           'providerUid': provider['id'],
           'status': 'pending',
@@ -58,7 +60,7 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
               .collection('data_sharing')
               .doc(existingSharing.docs.first.id)
               .update({'active': false});
-          
+
           _showSnackBar('Data sharing disabled', Colors.orange);
         }
       }
@@ -88,9 +90,10 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
 
   Future<void> _checkExistingDataSharing() async {
     try {
-      final provider = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final provider =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final currentUser = FirebaseAuth.instance.currentUser;
-      
+
       if (provider != null && currentUser != null) {
         final existingSharing = await FirebaseFirestore.instance
             .collection('data_sharing')
@@ -110,8 +113,9 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    
+    final provider =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -203,7 +207,8 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 : Switch(
                                     value: _shareData,
@@ -217,26 +222,36 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
                   ),
                   const SizedBox(height: 16),
                   ListTile(
-                    leading: const Icon(Icons.info_outline, color: Colors.redAccent),
+                    leading:
+                        const Icon(Icons.info_outline, color: Colors.redAccent),
                     title: const Text(
                       'How does sharing my data work?',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
-                    trailing: const Icon(FontAwesomeIcons.angleRight, color: Colors.redAccent),
+                    trailing: const Icon(FontAwesomeIcons.angleRight,
+                        color: Colors.redAccent),
                     onTap: () {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Data Sharing Information'),
+                          backgroundColor: Colors.white,
+                          title: const Text(
+                            'Data Sharing Information',
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold),
+                          ),
                           content: const Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('When you share your data:'),
                               SizedBox(height: 8),
-                              Text('• Your bleed logs will be visible to this provider'),
+                              Text(
+                                  '• Your bleed logs will be visible to this provider'),
                               Text('• Your medication history will be shared'),
-                              Text('• Your dosage calculations will be accessible'),
+                              Text(
+                                  '• Your dosage calculations will be accessible'),
                               Text('• You can revoke access at any time'),
                             ],
                           ),
@@ -252,13 +267,15 @@ class _CareUserInformationScreenState extends State<CareUserInformationScreen> {
                   ),
                   Divider(color: Colors.grey.shade300),
                   ListTile(
-                    leading: const Icon(Icons.email_outlined, color: Colors.redAccent),
+                    leading: const Icon(Icons.email_outlined,
+                        color: Colors.redAccent),
                     title: const Text(
                       'Contact Provider',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     subtitle: Text(provider?['email'] ?? 'No email available'),
-                    trailing: const Icon(FontAwesomeIcons.angleRight, color: Colors.redAccent),
+                    trailing: const Icon(FontAwesomeIcons.angleRight,
+                        color: Colors.redAccent),
                     onTap: () {
                       // TODO: Implement email functionality
                     },

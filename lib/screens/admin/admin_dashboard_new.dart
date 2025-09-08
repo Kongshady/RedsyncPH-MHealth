@@ -218,7 +218,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 top: BorderSide(width: 3.0, color: Colors.redAccent),
               ),
             ),
-            tabs: [
+            tabs: const [
               Tab(
                 icon: Icon(Icons.home, size: 24),
                 text: 'Home',
